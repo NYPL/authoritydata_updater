@@ -1,0 +1,3 @@
+# Let's not bake secrets into our Docker images
+.env
+.git
