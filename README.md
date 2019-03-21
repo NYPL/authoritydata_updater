@@ -15,7 +15,10 @@ Locally - you can point it to [a dockerized Solr 3.5 that has a core named "auth
 
 ## Running
 
-`docker-compose up`
+1.  `docker-compose up`
+
+You can confirm that your solr core exists by going to: `http://localhost:8983/solr/admin/cores?action=STATUS&core=authoritydata`
+You can see the Solr admin interface here: http://localhost:8983/solr/admin/
 
 ## Git Workflow
 
