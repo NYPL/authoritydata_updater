@@ -9,3 +9,12 @@ services:
       - ./.env
     volumes:
       - '.:/opt/authoritydata_udpater'
+    depends_on:
+    - solr
+  solr:
+    build:
+      context: ../authoritydata_solr_docker
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - '8983:8983'
