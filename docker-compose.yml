@@ -9,6 +9,7 @@ services:
       - ./.env
     volumes:
       - '.:/opt/authoritydata_udpater'
+    entrypoint: ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary $VOCABULARY --source $SOURCE_OF_TERMS
     depends_on:
     - solr
   solr:

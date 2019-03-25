@@ -17,6 +17,13 @@ Locally - you can point it to [a dockerized Solr 3.5 that has a core named "auth
 
 1.  `docker-compose up`
 
+## Running authoritydata_updater.rb
+
+Looking at [docker-compose.yml](./docker-compose.yml), locally we pass in the values to the `--source` and `--vocabulary` options
+through the environment variables in .env In production, we'd probably just set the values when we overwrite entrypoint.
+
+## Confirming Solr Is Up
+
 You can confirm that your solr core exists by going to: `http://localhost:8983/solr/admin/cores?action=STATUS&core=authoritydata`
 You can see the Solr admin interface here: http://localhost:8983/solr/admin/
 

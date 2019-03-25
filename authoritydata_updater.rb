@@ -1,5 +1,5 @@
 require 'optparse'
-require File.join('.', 'lib', 'vocabulary_parser')
+require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
 SUPPORTED_VOCABULARIES = ['carriers'].freeze
