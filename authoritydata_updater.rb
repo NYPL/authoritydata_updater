@@ -1,1 +1,44 @@
-puts 'Hey, so I ran...'
+require 'optparse'
+require File.join('.', 'lib', 'vocabulary_parser')
+
+options = {}
+SUPPORTED_VOCABULARIES = ['carriers'].freeze
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: ruby authoritydata_udpater.rb [options] \n Exaxmple: ruby authoritydata_udpater.rb --authority carriers --source http://example.com/authority-file.xml'
+  opts.separator ''
+  opts.separator "Supported vocabularie: #{SUPPORTED_VOCABULARIES.join(', ')}"
+  opts.separator ''
+
+  opts.on('-v=', '--vocabulary', 'The type of vocabularies in the source file') do |vocabulary|
+    options[:vocabulary] = vocabulary
+  end
+
+  opts.on('-s=', '--source', 'Path or URL to vocabulary file') do |source|
+    options[:source] = source
+  end
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end
+
+opt_parser.parse!
+
+# TODO: These's probably a nicer way to raise these exceptions or move this
+# into VocabularyParser's initializer
+unless SUPPORTED_VOCABULARIES.include?(options[:vocabulary])
+  puts "You need to use a supported vocabulary like: #{SUPPORTED_VOCABULARIES.join(', ')}."
+  puts opt_parser
+  exit
+end
+
+if options[:source].nil?
+  puts 'You need to supply a path or URL to the vocabulary file'
+  puts opt_parser
+  exit
+end
+
+parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source])
+parser.parse!
