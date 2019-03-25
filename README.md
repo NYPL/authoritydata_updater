@@ -9,7 +9,7 @@ Locally - you can point it to [a dockerized Solr 3.5 that has a core named "auth
 ## Building
 
 1.  clone [NYPL/authoritydata_solr_docker](https://github.com/NYPL/authoritydata_solr_docker) into a sibling directory of this app.
-2.  In this directory `cp ./env.example ./.env`
+2.  In this directory `cp ./.env.example ./.env`
 3.  Fill in the `.env`
 4.  `docker-compose build`
 
