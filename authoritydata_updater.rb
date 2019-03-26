@@ -5,9 +5,9 @@ options = {}
 SUPPORTED_VOCABULARIES = ['carriers'].freeze
 
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --authority carriers --source http://example.com/authority-file.xml'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary carriers --source http://example.com/authority-file.xml'
   opts.separator ''
-  opts.separator "Supported vocabularie: #{SUPPORTED_VOCABULARIES.join(', ')}"
+  opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''
 
   opts.on('-v=', '--vocabulary', 'The type of vocabularies in the source file') do |vocabulary|
