@@ -1,9 +1,6 @@
 require 'nypl_log_formatter'
-<<<<<<< Updated upstream
-=======
 require 'open-uri'
 require_relative 'solr_handler.rb'
->>>>>>> Stashed changes
 
 class VocabularyParser
   attr_reader :source, :vocabulary
