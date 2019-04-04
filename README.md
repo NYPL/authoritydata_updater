@@ -39,6 +39,7 @@ Once you have the app setup...
 This starts a container, with your local directory mounted into into it.
 
 3.  Go to where the app is mounted and run `bundle`.
+To find out where the app is mounted, refer to the configurations specificed in the docker-compose.yml. 
 This makes the required changes to `Gemfile.lock`.  
 The _real_ installation will happen in the step 5.
 

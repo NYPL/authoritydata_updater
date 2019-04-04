@@ -3,13 +3,14 @@ require 'open-uri'
 require_relative 'solr_handler.rb'
 
 class VocabularyParser
-  attr_reader :source, :vocabulary
+  attr_reader :source, :vocabulary, :solr_url
 
-  def initialize(vocabulary: nil, source: nil)
+  def initialize(vocabulary: nil, source: nil, solr_url: nil)
     @logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
     @source = source
     @vocabulary = vocabulary
+    @solr_url = solr_url
   end
 
   def parse!
@@ -29,7 +30,7 @@ class VocabularyParser
       solr_docs << converted_doc if converted_doc
     end
     
-    response = SolrHandler.send_docs_to_solr(solr_docs)
+    response = SolrHandler.send_docs_to_solr(@solr_url, solr_docs)
     
     puts "Converted these carriers #{uri} to #{solr_docs}."
   end
