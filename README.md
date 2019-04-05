@@ -50,11 +50,13 @@ The _real_ installation will happen in the step 5.
 
 ### Git Workflow
 
-TODO: Write code to actually run.
+`master` is considered production/stable.
+Cut feature branches off of, and file pull requests against `master`.
 
 ### Deployment
 
-TODO...
+As of now, when a remote Solr needs to be updated - this is run on developers'
+machines. It is not deployed to any remote environments.
 
 ## Supported Vocabularies
 
