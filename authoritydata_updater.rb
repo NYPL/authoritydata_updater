@@ -5,7 +5,7 @@ options = {}
 SUPPORTED_VOCABULARIES = ['carriers'].freeze
 
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary carriers --source http://example.com/authority-file.xml --solrUrl http://localhost:8983/solr'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary carriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr'
   opts.separator ''
   opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''
@@ -17,7 +17,7 @@ opt_parser = OptionParser.new do |opts|
   opts.on('-s=', '--source', 'Path or URL to vocabulary file') do |source|
     options[:source] = source
   end
-  
+
   opts.on('-u=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
     options[:solr_url] = solr_url
   end

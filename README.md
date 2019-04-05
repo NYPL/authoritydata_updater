@@ -39,7 +39,7 @@ Once you have the app setup...
 This starts a container, with your local directory mounted into into it.
 
 3.  Go to where the app is mounted and run `bundle`.
-To find out where the app is mounted, refer to the configurations specificed in the docker-compose.yml. 
+To find out where the app is mounted, refer to the configurations specificed in the docker-compose.yml.
 This makes the required changes to `Gemfile.lock`.  
 The _real_ installation will happen in the step 5.
 
@@ -48,10 +48,17 @@ The _real_ installation will happen in the step 5.
 5.  Rebuild the Docker image.
 `docker-compose build --no-cache updater`
 
-## Git Workflow
+### Git Workflow
 
 TODO: Write code to actually run.
 
-## Deployment
+### Deployment
 
 TODO...
+
+## Supported Vocabularies
+
+This code _may_ work for a lot of vocabularies but these are the ones  
+we've tested on:
+
+* [LOC Carriers](http://id.loc.gov/vocabulary/carriers.json)
