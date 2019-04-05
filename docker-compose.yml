@@ -9,7 +9,7 @@ services:
       - ./.env
     volumes:
       - '.:/opt/authoritydata_udpater'
-    command: ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary $VOCABULARY --source $SOURCE_OF_TERMS
+    command: ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary $VOCABULARY --source $SOURCE_OF_TERMS --solrUrl $SOLR_URL
     depends_on:
     - solr
   solr:
