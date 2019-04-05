@@ -2,10 +2,10 @@ require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['carriers'].freeze
+SUPPORTED_VOCABULARIES = ['rdacarriers'].freeze
 
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary carriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary rdacarriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr'
   opts.separator ''
   opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''

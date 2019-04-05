@@ -16,12 +16,12 @@ describe "vocabulary parser" do
     expect(converted_doc).to eq({:uri=>"http://id.loc.gov/vocabulary/carriers/nn",
                                  :term=>"flipchart",
                                  :term_idx=>"flipchart",
-                                 :term_type=>"carrier",
+                                 :term_type=>"rdacarrier",
                                  :record_id=>"nn",
                                  :language=>"en",
-                                 :authority_code=>"carriers",
-                                 :authority_name=>"LOC carrier type",
-                                 :unique_id=>"carriers_nn",
+                                 :authority_code=>"rdacarriers",
+                                 :authority_name=>"RDA carrier type",
+                                 :unique_id=>"rdacarriers_nn",
                                  :alternate_term_idx=>"flipchart",
                                  :alternate_term=>"flipchart"})
   end

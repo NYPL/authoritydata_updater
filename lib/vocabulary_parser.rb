@@ -15,7 +15,7 @@ class VocabularyParser
 
   def parse!
     case @vocabulary
-    when 'carriers'
+    when 'rdacarriers'
       post_carrier_authorities_to_solr(@source)
     end
     @logger.info("Finished parsing #{@vocabulary} from #{@source}.")
@@ -41,12 +41,12 @@ class VocabularyParser
         :uri => json_carrier_doc["@id"], 
         :term => json_carrier_doc["http://www.loc.gov/mads/rdf/v1#authoritativeLabel"].first["@value"], 
         :term_idx => json_carrier_doc["http://www.loc.gov/mads/rdf/v1#authoritativeLabel"].first["@value"], 
-        :term_type => "carrier", 
+        :term_type => "rdacarrier", 
         :record_id => json_carrier_doc["@id"].gsub('http://id.loc.gov/vocabulary/carriers/',''), 
         :language => "en", 
-        :authority_code => "carriers", 
-        :authority_name => "LOC carrier type", 
-        :unique_id => "carriers_#{json_carrier_doc["@id"].gsub('http://id.loc.gov/vocabulary/carriers/','')}", 
+        :authority_code => "rdacarriers", 
+        :authority_name => "RDA carrier type", 
+        :unique_id => "rdacarriers_#{json_carrier_doc["@id"].gsub('http://id.loc.gov/vocabulary/carriers/','')}", 
         :alternate_term_idx => json_carrier_doc["http://www.w3.org/2004/02/skos/core#prefLabel"].first["@value"], 
         :alternate_term => json_carrier_doc["http://www.w3.org/2004/02/skos/core#prefLabel"].first["@value"]
       }
