@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'nypl_log_formatter', '~> 0.1.3'
-gem 'rsolr', '1.0.10'
+gem 'rsolr', '1.1.2'
 gem 'rsolr-ext', '1.0.3'
 
 group :development do
