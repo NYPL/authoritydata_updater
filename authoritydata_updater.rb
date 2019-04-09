@@ -4,8 +4,11 @@ require File.join(__dir__, 'lib', 'vocabulary_parser')
 options = {}
 SUPPORTED_VOCABULARIES = ['rdacarriers'].freeze
 
+solr_username = nil
+solr_password = nil
+
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary rdacarriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary rdacarriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr --username groucho --password swordfish'
   opts.separator ''
   opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''
@@ -18,8 +21,16 @@ opt_parser = OptionParser.new do |opts|
     options[:source] = source
   end
 
-  opts.on('-u=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
+  opts.on('-solr=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
     options[:solr_url] = solr_url
+  end
+  
+  opts.on('-u=', '--username', 'Solr username') do |username|
+    solr_username = username
+  end
+  
+  opts.on('-p=', '--password', 'Solr password') do |password|
+    solr_password = password
   end
 
   opts.on_tail('-h', '--help', 'Show this message') do
@@ -29,6 +40,9 @@ opt_parser = OptionParser.new do |opts|
 end
 
 opt_parser.parse!
+
+SOLR_USERNAME = solr_username
+SOLR_PASSWORD = solr_password
 
 # TODO: These's probably a nicer way to raise these exceptions or move this
 # into VocabularyParser's initializer

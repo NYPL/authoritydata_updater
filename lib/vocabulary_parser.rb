@@ -18,7 +18,7 @@ class VocabularyParser
     when 'rdacarriers'
       post_carrier_authorities_to_solr(@source)
     end
-    @logger.info("Finished parsing #{@vocabulary} from #{@source}.")
+    @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
   end
   
   def post_carrier_authorities_to_solr(source='http://id.loc.gov/vocabulary/carriers.json')
@@ -31,8 +31,7 @@ class VocabularyParser
     end
     
     response = SolrHandler.send_docs_to_solr(@solr_url, solr_docs)
-    
-    puts "Converted these carriers #{uri} to #{solr_docs}."
+    @logger.info("Converted carriers from #{uri}.")
   end
   
   def convert_json_carrier_doc(json_carrier_doc)
@@ -51,7 +50,7 @@ class VocabularyParser
         :alternate_term => json_carrier_doc["http://www.w3.org/2004/02/skos/core#prefLabel"].first["@value"]
       }
     else
-      # Skip invalid carrier record.
+      @logger.warn("Invalid carrier doc found. #{json_carrier_doc}")
       nil
     end
   end
