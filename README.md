@@ -64,3 +64,4 @@ This code _may_ work for a lot of vocabularies but these are the ones
 we've tested on:
 
 * [LOC Carriers](http://id.loc.gov/vocabulary/carriers.json)
+* [Graphic Materials (as N-Tripple/nt file)](http://id.loc.gov/vocabulary/graphicMaterials.html)
