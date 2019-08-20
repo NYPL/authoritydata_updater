@@ -2,7 +2,7 @@ require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['rdacarriers'].freeze
+SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials'].freeze
 
 solr_username = nil
 solr_password = nil
@@ -24,11 +24,11 @@ opt_parser = OptionParser.new do |opts|
   opts.on('-solr=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
     options[:solr_url] = solr_url
   end
-  
+
   opts.on('-u=', '--username', 'Solr username') do |username|
     solr_username = username
   end
-  
+
   opts.on('-p=', '--password', 'Solr password') do |password|
     solr_password = password
   end
