@@ -22,8 +22,11 @@ end
 
 class SolrHandler
   def self.send_docs_to_solr(solr_url, docs)
-    solr = RSolr.connect :url => solr_url
-    solr.add docs
-    solr.commit
+    solr = RSolr.connect(:url => solr_url)
+    # Post to Solr in batches of 1,000
+    docs.each_slice(1000) do |batch|
+      solr.add(batch.compact)
+      solr.commit
+    end
   end
 end
