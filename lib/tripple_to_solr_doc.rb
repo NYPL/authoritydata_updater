@@ -31,12 +31,12 @@ class TrippleToSolrDoc
     # Weed out out old /deprecated subjects,
     # changeNote predicates point to a bnode lines.
     # e.g.
-    #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.w3.org/2004/02/skos/core#changeNote> _:bnode12683670136320746870
+    #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
     #  ...and looking at _:bnode12683670136320746870
-    #  :bnode12683670136320746870 <http://purl.org/vocab/changeset/schema#changeReason> "deprecated"
+    #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
     all_subjects.reject! do |_subject, attributes|
-      change_history = attributes['http://www.w3.org/2004/02/skos/core#changeNote']
-      all_subjects.dig(change_history, 'http://purl.org/vocab/changeset/schema#changeReason') == 'deprecated'
+      change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
+      all_subjects.dig(change_history, 'http://id.loc.gov/ontologies/RecordInfo#recordStatus') == 'deprecated'
     end
 
     @@logger.info("after weeding out deprecated there were #{all_subjects.keys.length}")

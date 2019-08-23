@@ -22,8 +22,21 @@ class VocabularyParser
       post_carrier_authorities_to_solr(@source)
     when 'graphic_materials'
       post_graphic_materials_to_solr(@source)
+    when 'genre_and_form'
+      post_genre_and_form_to_solr(@source)
     end
     @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
+  end
+
+  def post_genre_and_form_to_solr(source)
+    solr_docs = TrippleToSolrDoc.convert!(file: source,
+      term_type: 'genreform',
+      authority_code: 'lcgft',
+      authority_name: 'Library of Congress Genre/Form Terms for Library and Archival Materials',
+      unique_id_prefix: 'lcgft'
+    )
+
+    SolrHandler.send_docs_to_solr(@solr_url, solr_docs)
   end
 
   def post_graphic_materials_to_solr(source)
@@ -33,7 +46,7 @@ class VocabularyParser
       authority_name: 'Thesaurus for Graphic Materials',
       unique_id_prefix: 'lctgm'
     )
-    
+
     SolrHandler.send_docs_to_solr(@solr_url, solr_docs)
   end
 
