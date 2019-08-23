@@ -2,7 +2,7 @@ require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials'].freeze
+SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form'].freeze
 
 solr_username = nil
 solr_password = nil
