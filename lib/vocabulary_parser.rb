@@ -41,7 +41,7 @@ class VocabularyParser
 
   def post_graphic_materials_to_solr(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
-      term_type: 'genreform',
+      term_type: 'concept',
       authority_code: 'lctgm',
       authority_name: 'Thesaurus for Graphic Materials',
       unique_id_prefix: 'lctgm'
