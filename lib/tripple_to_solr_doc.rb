@@ -29,27 +29,27 @@ class TrippleToSolrDoc
             # We've seen this subject before...
             this_subjects_attributes = Marshal.load(@@redis.get(subject_url))
 
-             if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+            if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
               if this_subjects_attributes[predicate_string]
                 this_subjects_attributes[predicate_string] << statement.object.to_s
               else
                 # This is the first time we've seen syntax-ns#type
-                this_subjects_attributes.merge!(predicate_string => [statement.object.to_s])
+                this_subjects_attributes[predicate_string] = [statement.object.to_s]
               end
             else
-              this_subjects_attributes.merge!(predicate_string => statement.object.to_s)
+              this_subjects_attributes[predicate_string] = statement.object.to_s
             end
 
-            @redis.set(subject_url, Marshal.dump(this_subjects_attributes))
+            @@redis.set(subject_url, Marshal.dump(this_subjects_attributes))
           else
             # We've never seen this subject before
 
             if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
               inital_hash = Marshal.dump({predicate_string => [statement.object.to_s]})
-              @redis.set(subject_url, inital_hash)
+              @@redis.set(subject_url, inital_hash)
             else
               initial_hash = Marshal.dump({predicate_string => statement.object.to_s})
-              @redis.set(subject_url, initial_hash)
+              @@redis.set(subject_url, initial_hash)
             end
           end
         end
@@ -105,6 +105,8 @@ class TrippleToSolrDoc
         alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
         alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
       }
+      
+      solr_docs << new_document
     end
     solr_docs
   end
