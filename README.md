@@ -29,6 +29,24 @@ You can see the Solr admin interface here: <http://localhost:8983/solr/admin/>
 
 ## Development
 
+### Testing and Running locally
+
+Say you wanted to test an update to the graphic materials terms. Here's how you would do that. 
+
+1. Download and unzip the the graphic materials nt file and put it in the root of this project. It will get mounted into the container.
+2. docker-compose build updater --no-cache. (Updates gems if there are new gems)
+3. docker-compose run updater bash (This brings up Solr, and drops you off in a shell session).
+4. Confirm there are no documents in your solr:
+  ** http://localhost:8983/solr/admin/cores?action=STATUS&core=authoritydata
+  ** http://localhost:8983/solr/admin/
+
+5. (Inside the container) go to /opt/authoritydata_udpater/ and run:
+``ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary graphic_materials --source /opt/authoritydata_udpater/graphicMaterials.both.nt --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD``
+
+6. Make some coffee - this parses a 493,314 line file. Endorse a favorite colleague for docker on LinkedIn. 
+7. By the end of your coffee break it will post to solr.
+8. Check those Solr endpoints again, you'll see the documents in there.
+
 ### Adding / Updating Gems
 
 Once you have the app setup...

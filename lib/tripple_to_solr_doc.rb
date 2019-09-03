@@ -90,7 +90,22 @@ class TrippleToSolrDoc
   end
 
   def self.detect_term_type(predicate_to_object_mapping)
+    term_types = {
+      'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
+      'http://www.loc.gov/mads/rdf/v1#Geographic' => 'geographic',
+      'http://www.loc.gov/mads/rdf/v1#PersonalName' => 'name_personal',
+      'http://www.loc.gov/mads/rdf/v1#ComplexSubject' => 'complex_subject',
+      'http://www.loc.gov/mads/rdf/v1#CorporateName' => 'name_corporate',
+      'http://www.loc.gov/mads/rdf/v1#GenreForm' => 'genreform',
+      'http://www.loc.gov/mads/rdf/v1#Temporal' => 'temporal',
+      'http://www.loc.gov/mads/rdf/v1#NameTitle' => 'name_title',
+      'http://www.loc.gov/mads/rdf/v1#Title' => 'title',
+      'http://www.loc.gov/mads/rdf/v1#ConferenceName' => 'name_conference'
+    }
+    
+    terms = term_types.keys    
     ns_types = predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
-    'auto_detected'
+    
+    term_types[(terms & ns_types)&.first]
   end
 end
