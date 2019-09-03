@@ -24,8 +24,19 @@ class VocabularyParser
       post_graphic_materials_to_solr(@source)
     when 'genre_and_form'
       post_genre_and_form_to_solr(@source)
+    when 'names'
+      post_name_to_solr(@source)
     end
     @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
+  end
+
+  def post_name_to_solr(source)
+    solr_docs = TrippleToSolrDoc.convert!(file: source,
+      term_type: :auto,
+      authority_code: 'naf',
+      authority_name: 'LC/NACO authority file',
+      unique_id_prefix: 'naf'
+    )
   end
 
   def post_genre_and_form_to_solr(source)

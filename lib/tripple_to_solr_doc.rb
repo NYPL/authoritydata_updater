@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'redis'
 require 'rdf'
 require 'linkeddata'
 include RDF
@@ -11,17 +12,40 @@ class TrippleToSolrDoc
     all_subjects = {}
     statement_count = 0
 
-    RDF::Reader.open(file) do |reader|
-      reader.each_statement do |statement|
-        statement_count += 1
-        @@logger.debug("parsing statement # #{statement_count}")
-        subject_url = statement.subject.to_s
-        if all_subjects.keys.include?(subject_url)
-          all_subjects[subject_url].merge!(statement.predicate.to_s => statement.object.to_s)
-        else
-          all_subjects[subject_url] = {
-            statement.predicate.to_s => statement.object.to_s
-          }
+    File.open(file,'r').each do |line|
+      # Almost all predicates show up once per Subject, but a subject can have
+      # multiple "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" predicates
+      RDF::NTriples::Reader.new(line) do |reader|
+        reader.each_statement do |statement|
+          statement_count += 1
+          predicate_string = statement.predicate.to_s
+          @@logger.debug("parsing statement # #{statement_count}")
+          subject_url = statement.subject.to_s
+
+          if all_subjects[subject_url]
+            # We've seen this subject before
+            if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              if all_subjects[subject_url][predicate_string]
+                all_subjects[subject_url][predicate_string] << statement.object.to_s
+              else
+                # This is the first time we've seen syntax-ns#type
+                all_subjects[subject_url].merge!(predicate_string => [statement.object.to_s])
+              end
+            else
+              all_subjects[subject_url].merge!(predicate_string => statement.object.to_s)
+            end
+          else
+            # This is the first time we've seen this subject
+            if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              all_subjects[subject_url] = {
+                predicate_string => [statement.object.to_s]
+              }
+            else
+              all_subjects[subject_url] = {
+                predicate_string => statement.object.to_s
+              }
+            end
+          end
         end
       end
     end
@@ -52,7 +76,7 @@ class TrippleToSolrDoc
         uri: subject,
         term: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
         term_idx: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
-        term_type: term_type,
+        term_type: (term_type == :auto) ? detect_term_type(attributes) : term_type,
         record_id: File.basename(subject),
         language: 'en',
         authority_code: authority_code,
@@ -63,5 +87,10 @@ class TrippleToSolrDoc
       }
     end
     solr_docs
+  end
+
+  def self.detect_term_type(predicate_to_object_mapping)
+    ns_types = predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
+    'auto_detected'
   end
 end
