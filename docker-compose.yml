@@ -12,6 +12,11 @@ services:
     command: ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary $VOCABULARY --source $SOURCE_OF_TERMS --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD
     depends_on:
     - solr
+    - redis
+  redis:
+    image: redis:5.0.5
+    env_file:
+      - ./.env
   solr:
     build:
       context: ../authoritydata_solr_docker
