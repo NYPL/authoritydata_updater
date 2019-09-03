@@ -1,8 +1,11 @@
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
+
 require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form'].freeze
+SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form', 'names'].freeze
 
 solr_username = nil
 solr_password = nil
