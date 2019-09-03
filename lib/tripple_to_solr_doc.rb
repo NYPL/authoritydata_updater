@@ -64,15 +64,19 @@ class TrippleToSolrDoc
     #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
     #  ...and looking at _:bnode12683670136320746870
     #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
-    @@redis.scan_each do |subject, attributes_as_string|
-      attributes = Marshal.load(attributes_as_string)
-      change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
-      bnode_for_this = @@redis.get(change_history)
+    @@redis.scan_each { |key| puts key + ' ' + redis.type(key) }
+    
+    @@redis.scan_each do |subject|
+      if @@redis.type(subject) == 'string'
+        attributes = Marshal.load(@@redis.get(subject))    
+        change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
+        bnode_for_this = @@redis.get(change_history)
 
-      if change_history && bnode_for_this
-        bnodes_hash = Marshal.load(bnode_for_this)
-        if bnodes_hash['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
-          @@redis.del(subject)
+        if change_history && bnode_for_this
+          bnodes_hash = Marshal.load(bnode_for_this)
+          if bnodes_hash['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
+            @@redis.del(subject)
+          end
         end
       end
     end
@@ -80,7 +84,7 @@ class TrippleToSolrDoc
     @@logger.info("after weeding out deprecated there were #{@@redis.dbsize}")
 
     # Weed out bnodes, you have to do this after weeding out deprecateds, not at the same time
-    @@redis.scan_each do |subject, attributes_as_string|
+    @@redis.scan_each do |subject|
       unless subject.include?('http')
         @@redis.del(subject)
       end
@@ -89,24 +93,26 @@ class TrippleToSolrDoc
     @@logger.info("after weeding out bnodes there were #{@@redis.dbsize}")
 
     solr_docs = []
-    @@redis.scan_each do |subject, attr|
-      attributes = Marshal.load(attr)
+    @@redis.scan_each do |subject|
+      if @@redis.type(subject) == 'string'
+        attributes = Marshal.load(@@redis.get(subject))
 
-      new_document = {
-        uri: subject,
-        term: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
-        term_idx: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
-        term_type: term_type == :auto ? detect_term_type(attributes) : term_type,
-        record_id: File.basename(subject),
-        language: 'en',
-        authority_code: authority_code,
-        authority_name: authority_name,
-        unique_id: "#{unique_id_prefix}_#{File.basename(subject)}",
-        alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
-        alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
-      }
+        new_document = {
+          uri: subject,
+          term: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
+          term_idx: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
+          term_type: term_type == :auto ? detect_term_type(attributes) : term_type,
+          record_id: File.basename(subject),
+          language: 'en',
+          authority_code: authority_code,
+          authority_name: authority_name,
+          unique_id: "#{unique_id_prefix}_#{File.basename(subject)}",
+          alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
+          alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
+        }
       
-      solr_docs << new_document
+        solr_docs << new_document
+      end
     end
     solr_docs
   end
