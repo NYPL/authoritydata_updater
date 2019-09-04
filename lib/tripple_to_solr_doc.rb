@@ -11,8 +11,7 @@ class TrippleToSolrDoc
   @@redis = Redis.new(url: ENV['REDIS_URL'])
 
   def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:)
-    # remove all_subjects
-    all_subjects = {}
+
     statement_count = 0
 
     File.open(file, 'r').each do |line|
