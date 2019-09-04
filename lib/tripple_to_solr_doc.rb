@@ -65,8 +65,7 @@ class TrippleToSolrDoc
     #  ...and looking at _:bnode12683670136320746870
     #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
     @@redis.scan_each do |subject|
-      if @@redis.type(subject) == 'string'
-        attributes = Marshal.load(@@redis.get(subject))    
+        attributes = Marshal.load(@@redis.get(subject))
         change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
         bnode_for_this = @@redis.get(change_history)
 
@@ -76,7 +75,6 @@ class TrippleToSolrDoc
             @@redis.del(subject)
           end
         end
-      end
     end
 
     @@logger.info("after weeding out deprecated there were #{@@redis.dbsize}")
@@ -92,7 +90,6 @@ class TrippleToSolrDoc
 
     solr_docs = []
     @@redis.scan_each do |subject|
-      if @@redis.type(subject) == 'string'
         attributes = Marshal.load(@@redis.get(subject))
 
         new_document = {
@@ -108,10 +105,9 @@ class TrippleToSolrDoc
           alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
           alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
         }
-      
+
         solr_docs << new_document
       end
-    end
     solr_docs
   end
 
