@@ -64,8 +64,6 @@ class TrippleToSolrDoc
     #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
     #  ...and looking at _:bnode12683670136320746870
     #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
-    @@redis.scan_each { |key| puts key + ' ' + redis.type(key) }
-    
     @@redis.scan_each do |subject|
       if @@redis.type(subject) == 'string'
         attributes = Marshal.load(@@redis.get(subject))    
