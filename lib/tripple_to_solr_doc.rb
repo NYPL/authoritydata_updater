@@ -86,7 +86,7 @@ class TrippleToSolrDoc
     #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
     #  ...and looking at _:bnode12683670136320746870
     #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
-    @@redis.scan_each do |subject|
+    @@redis.scan_each(match: "http*") do |subject|
       attributes = Marshal.load(@@redis.get(subject))
       change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
       bnode_for_this = @@redis.get(change_history)
@@ -102,8 +102,8 @@ class TrippleToSolrDoc
     @@logger.info("after weeding out deprecated there were #{@@redis.dbsize}")
 
     # Weed out bnodes, you have to do this after weeding out deprecateds, not at the same time
-    @@redis.scan_each do |subject|
-      @@redis.del(subject) unless subject.include?('http')
+    @@redis.scan_each(match: "*bnode*") do |subject|
+      @@redis.del(subject)
     end
 
     @@logger.info("after weeding out bnodes there were #{@@redis.dbsize}")
