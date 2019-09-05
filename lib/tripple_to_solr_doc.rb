@@ -23,33 +23,36 @@ class TrippleToSolrDoc
           predicate_string = statement.predicate.to_s
           @@logger.debug("parsing statement # #{statement_count}")
           subject_url = statement.subject.to_s
+          if worthwhile_statement?(statement)
+            if @@redis.exists(subject_url)
+              # We've seen this subject before...
+              this_subjects_attributes = Marshal.load(@@redis.get(subject_url))
 
-          if @@redis.exists(subject_url)
-            # We've seen this subject before...
-            this_subjects_attributes = Marshal.load(@@redis.get(subject_url))
-
-            if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-              if this_subjects_attributes[predicate_string]
-                this_subjects_attributes[predicate_string] << statement.object.to_s
+              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+                if this_subjects_attributes[predicate_string]
+                  this_subjects_attributes[predicate_string] << statement.object.to_s
+                else
+                  # This is the first time we've seen syntax-ns#type
+                  this_subjects_attributes[predicate_string] = [statement.object.to_s]
+                end
               else
-                # This is the first time we've seen syntax-ns#type
-                this_subjects_attributes[predicate_string] = [statement.object.to_s]
+                this_subjects_attributes[predicate_string] = statement.object.to_s
               end
-            else
-              this_subjects_attributes[predicate_string] = statement.object.to_s
-            end
 
-            @@redis.set(subject_url, Marshal.dump(this_subjects_attributes))
+              @@redis.set(subject_url, Marshal.dump(this_subjects_attributes))
+            else
+              # We've never seen this subject before
+
+              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+                inital_hash = Marshal.dump({predicate_string => [statement.object.to_s]})
+                @@redis.set(subject_url, inital_hash)
+              else
+                initial_hash = Marshal.dump({predicate_string => statement.object.to_s})
+                @@redis.set(subject_url, initial_hash)
+              end
+            end
           else
-            # We've never seen this subject before
-
-            if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-              inital_hash = Marshal.dump({predicate_string => [statement.object.to_s]})
-              @@redis.set(subject_url, inital_hash)
-            else
-              initial_hash = Marshal.dump({predicate_string => statement.object.to_s})
-              @@redis.set(subject_url, initial_hash)
-            end
+            @@logger.info("skipping a statement")
           end
         end
       end
@@ -110,7 +113,25 @@ class TrippleToSolrDoc
     solr_docs
   end
 
+  # These files are FULL of statements we don't care about.
+  # Statements that we never use to post info to Solr.
+  # As we parse the N-tripple file, we can skip even considering
+  # this line if it's dealing with a predicate we don't care about (e.g. http://www.w3.org/2000/01/rdf-schema#seeAlso)
+  def self.worthwhile_statement?(statement)
+    # TODO: worthehile_predicates can be factored out into a class constant
+    worthwhile_predicates = [
+      'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+      'http://www.loc.gov/mads/rdf/v1#adminMetadata',
+      'http://id.loc.gov/ontologies/RecordInfo#recordStatus',
+      'http://www.loc.gov/mads/rdf/v1#authoritativeLabel',
+      "http://www.w3.org/2004/02/skos/core#prefLabel"
+    ]
+
+    worthwhile_predicates.include?(statement.predicate.to_s)
+  end
+
   def self.detect_term_type(predicate_to_object_mapping)
+    # TODO: term_types can be factored out into a class constant
     term_types = {
       'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
       'http://www.loc.gov/mads/rdf/v1#Geographic' => 'geographic',
