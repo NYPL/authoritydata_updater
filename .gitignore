@@ -7,3 +7,7 @@
 *.nt
 *.zip
 *.both
+
+# The files we output when parsing
+*.db
+*.json
