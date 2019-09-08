@@ -31,18 +31,22 @@ class TrippleToSolrDoc
 
   @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
-  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:)
-    filename_string = "#{authority_code}_#{Time.now.utc.to_i}.db"
+  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
+    filename_string = db_file_name || "#{authority_code}_#{Time.now.utc.to_i}.db"
     @@gdbm = GDBM.new(filename_string)
 
     statement_count = 0
 
     File.open(file, 'r').each do |line|
+      statement_count += 1
+      if start_at_line && statement_count < start_at_line
+        @@logger.info("skipping line #{statement_count}")
+        next
+      end
       # Almost all predicates show up once per Subject, but a subject can have
       # multiple "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" predicates
       RDF::NTriples::Reader.new(line) do |reader|
         reader.each_statement do |statement|
-          statement_count += 1
           predicate_string = statement.predicate.to_s
           @@logger.debug("parsing statement # #{statement_count}")
           subject_url = statement.subject.to_s
@@ -64,13 +68,12 @@ class TrippleToSolrDoc
               @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
             else
               # We've never seen this subject before
-
               if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-                inital_hash = Marshal.dump(predicate_string => [statement.object.to_s])
-                @@gdbm[subject_url] = inital_hash
+                initial_hash = Marshal.dump(predicate_string => [statement.object.to_s])
+                @@gdbm[subject_url] = initial_hash
               else
                 initial_hash = Marshal.dump(predicate_string => statement.object.to_s)
-                @@gdbm[subject_url] = inital_hash
+                @@gdbm[subject_url] = initial_hash
               end
             end
           else

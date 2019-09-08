@@ -4,9 +4,11 @@ require_relative 'tripple_to_solr_doc'
 class VocabularyParser
   attr_reader :source, :vocabulary, :solr_url
 
-  def initialize(vocabulary: nil, source: nil, solr_url: nil)
+  def initialize(vocabulary: nil, source: nil, solr_url: nil, start_at_line: nil, db_file_name: nil)
     @source = source
     @vocabulary = vocabulary
+    @start_at_line = start_at_line
+    @db_file_name = db_file_name
   end
 
   def parse!
@@ -26,6 +28,8 @@ class VocabularyParser
   def post_name_to_solr(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: :auto,
+      start_at_line: @start_at_line,
+      db_file_name: @db_file_name,
       authority_code: 'naf',
       authority_name: 'LC/NACO authority file',
       unique_id_prefix: 'naf'
@@ -35,6 +39,8 @@ class VocabularyParser
   def post_genre_and_form_to_solr(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: 'genreform',
+      start_at_line: @start_at_line,
+      db_file_name: @db_file_name,
       authority_code: 'lcgft',
       authority_name: 'Library of Congress Genre/Form Terms for Library and Archival Materials',
       unique_id_prefix: 'lcgft'
@@ -44,6 +50,8 @@ class VocabularyParser
   def post_graphic_materials_to_solr(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: 'concept',
+      start_at_line: @start_at_line,
+      db_file_name: @db_file_name,
       authority_code: 'lctgm',
       authority_name: 'Thesaurus for Graphic Materials',
       unique_id_prefix: 'lctgm'

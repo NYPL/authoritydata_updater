@@ -36,6 +36,14 @@ opt_parser = OptionParser.new do |opts|
     solr_password = password
   end
 
+  opts.on('-n=', '--start-on-line', "Start parsing on this line of the .nt file") do |line_number|
+    options[:start_at_line] = line_number.to_i
+  end
+
+  opts.on('-d=', '--db-file', "Use an existing db file, probably used with -n because a previous run was interrupted") do |db_file_name|
+    options[:db_file_name] = db_file_name
+  end
+
   opts.on_tail('-h', '--help', 'Show this message') do
     puts opts
     exit
@@ -67,5 +75,5 @@ if options[:solr_url].nil?
   exit
 end
 
-parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], solr_url: options[:solr_url])
+parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], solr_url: options[:solr_url], start_at_line: options[:start_at_line], db_file_name: options[:db_file_name])
 parser.parse!
