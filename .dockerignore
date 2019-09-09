@@ -1,3 +1,13 @@
-# Let's not bake secrets into our Docker images
+.idea/
+.DS_Store
+.log
+.csv
 .env
-.git
+.bundle
+*.nt
+*.zip
+*.both
+
+# The files we output when parsing
+*.db
+*.json
