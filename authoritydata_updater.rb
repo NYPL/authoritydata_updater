@@ -11,7 +11,7 @@ solr_username = nil
 solr_password = nil
 
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary rdacarriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr --username groucho --password swordfish'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary genre_and_form --source ./authority-file.nt'
   opts.separator ''
   opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''
@@ -22,18 +22,6 @@ opt_parser = OptionParser.new do |opts|
 
   opts.on('-s=', '--source', 'Path or URL to vocabulary file') do |source|
     options[:source] = source
-  end
-
-  opts.on('-solr=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
-    options[:solr_url] = solr_url
-  end
-
-  opts.on('-u=', '--username', 'Solr username') do |username|
-    solr_username = username
-  end
-
-  opts.on('-p=', '--password', 'Solr password') do |password|
-    solr_password = password
   end
 
   opts.on('-n=', '--start-on-line', "Start parsing on this line of the .nt file") do |line_number|
@@ -52,9 +40,6 @@ end
 
 opt_parser.parse!
 
-SOLR_USERNAME = solr_username
-SOLR_PASSWORD = solr_password
-
 # TODO: These's probably a nicer way to raise these exceptions or move this
 # into VocabularyParser's initializer
 unless SUPPORTED_VOCABULARIES.include?(options[:vocabulary])
@@ -65,12 +50,6 @@ end
 
 if options[:source].nil?
   puts 'You need to supply a path or URL to the vocabulary file'
-  puts opt_parser
-  exit
-end
-
-if options[:solr_url].nil?
-  puts 'You need to supply a valid solr url to post docs to'
   puts opt_parser
   exit
 end
