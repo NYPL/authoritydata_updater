@@ -60,5 +60,5 @@ ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary genre_and_
 ## Post The Documents To Solr.
 
 ```
-ruby post_to_solr -f lcgft_12345.json --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD
+ruby post_to_solr.rb -f lcgft_12345.json --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD
 ```
