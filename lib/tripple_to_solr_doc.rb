@@ -40,7 +40,6 @@ class TrippleToSolrDoc
     File.open(file, 'r').each do |line|
       statement_count += 1
       if start_at_line && statement_count < start_at_line
-        @@logger.info("skipping line #{statement_count}")
         next
       end
       # Almost all predicates show up once per Subject, but a subject can have
