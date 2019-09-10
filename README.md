@@ -12,54 +12,16 @@ Locally - you can point it to [a dockerized Solr 3.5 that has a core named "auth
 2.  In this directory `cp ./.env.example ./.env`
 3.  Fill in the `.env`
 4.  `docker-compose build`
+5.  **run with `docker-compose run updater bash`**.
 
-## Running
+See [./docs/running.md](running.md) for more context.
 
-1.  `docker-compose up`
-
-### Running authoritydata_updater.rb
-
-Looking at [docker-compose.yml](./docker-compose.yml), locally we pass in the values to the `--source` and `--vocabulary` options
-through the environment variables in .env In production, we'd probably just set the values when we overwrite entrypoint.
-
-### Confirming Solr Is Up
+## Confirming Solr Is Up
 
 You can confirm that your solr core exists by going to: `http://localhost:8983/solr/admin/cores?action=STATUS&core=authoritydata`
 You can see the Solr admin interface here: <http://localhost:8983/solr/admin/>
 
 ## Development
-
-### Working With Small Files
-
-N-Tripple/`.nt` files can be GIGANTIC.
-For example, the Name Authority one is 96.8 GB / 748,879,531 lines.
-We don't careabout many of the statements in those files.
-We don't use  those statements to post info to Solr.
-For example, we never care about statements with the predicate `http://www.w3.org/2000/01/rdf-schema#seeAlso`.
-
-```
-ruby ./clean_nt_file.rb ./large-file.nt ./desired-smaller-file.nt
-```
-
-**The can shrink files by 66%** - making them MUCH faster to run through `authoritydata_updater.rb`.
-
-### Testing and Running locally
-
-Say you wanted to test an update to the graphic materials terms. Here's how you would do that.
-
-1. Download and unzip the the graphic materials nt file and put it in the root of this project. It will get mounted into the container.
-2. docker-compose build updater --no-cache. (Updates gems if there are new gems)
-3. docker-compose run updater bash (This brings up Solr, and drops you off in a shell session).
-4. Confirm there are no documents in your solr:
-  ** http://localhost:8983/solr/admin/cores?action=STATUS&core=authoritydata
-  ** http://localhost:8983/solr/admin/
-
-5. (Inside the container) go to /opt/authoritydata_udpater/ and run:
-``ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary graphic_materials --source /opt/authoritydata_udpater/graphicMaterials.both.nt --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD``
-
-6. Make some coffee - this parses a 493,314 line file. Endorse a favorite colleague for docker on LinkedIn.
-7. By the end of your coffee break it will post to solr.
-8. Check those Solr endpoints again, you'll see the documents in there.
 
 ### Adding / Updating Gems
 
@@ -92,10 +54,6 @@ machines. It is not deployed to any remote environments.
 
 ## Supported Vocabularies
 
-This code _may_ work for a lot of vocabularies but these are the ones  
-we've tested on:
-
--   [LOC Carriers](http://id.loc.gov/vocabulary/carriers.json)
 -   [Graphic Materials (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/vocabularygraphicMaterials.nt.both.zip)
 -   [Genre & Form Terms (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/authoritiesgenreForms.nt.madsrdf.zip)
 -   [Names (as N-Tripple/nt file)](http://id.loc.gov/authorities/names.nt)

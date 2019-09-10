@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# N-Triples files are FULL of statements we don't care about.
+# Statements that we never use to post info to Solr.
+# This file takes an input file and outputs a file with only relevant statements
 WORTHWHILE_PREDICATES = [
   'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
   'http://www.loc.gov/mads/rdf/v1#adminMetadata',

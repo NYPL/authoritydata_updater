@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-require 'redis'
+require 'nypl_log_formatter'
 require 'rdf'
 require 'linkeddata'
-require 'redis'
+require 'gdbm'
+
 include RDF
 
 class TrippleToSolrDoc
@@ -29,24 +30,30 @@ class TrippleToSolrDoc
   ].freeze
 
   @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
-  @@redis = Redis.new(url: ENV['REDIS_URL'])
 
-  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:)
+  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
+    filename_string = db_file_name || "#{authority_code}_#{Time.now.utc.to_i}.db"
+    @@gdbm = GDBM.new(filename_string)
+
     statement_count = 0
 
     File.open(file, 'r').each do |line|
+      statement_count += 1
+      if start_at_line && statement_count < start_at_line
+        @@logger.info("skipping line #{statement_count}")
+        next
+      end
       # Almost all predicates show up once per Subject, but a subject can have
       # multiple "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" predicates
       RDF::NTriples::Reader.new(line) do |reader|
         reader.each_statement do |statement|
-          statement_count += 1
           predicate_string = statement.predicate.to_s
           @@logger.debug("parsing statement # #{statement_count}")
           subject_url = statement.subject.to_s
           if worthwhile_statement?(statement)
-            if @@redis.exists(subject_url)
+            if @@gdbm.has_key?(subject_url)
               # We've seen this subject before...
-              this_subjects_attributes = Marshal.load(@@redis.get(subject_url))
+              this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
 
               if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
                 if this_subjects_attributes[predicate_string]
@@ -58,17 +65,15 @@ class TrippleToSolrDoc
               else
                 this_subjects_attributes[predicate_string] = statement.object.to_s
               end
-
-              @@redis.set(subject_url, Marshal.dump(this_subjects_attributes))
+              @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
             else
               # We've never seen this subject before
-
               if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-                inital_hash = Marshal.dump(predicate_string => [statement.object.to_s])
-                @@redis.set(subject_url, inital_hash)
+                initial_hash = Marshal.dump(predicate_string => [statement.object.to_s])
+                @@gdbm[subject_url] = initial_hash
               else
                 initial_hash = Marshal.dump(predicate_string => statement.object.to_s)
-                @@redis.set(subject_url, initial_hash)
+                @@gdbm[subject_url] = initial_hash
               end
             end
           else
@@ -78,7 +83,7 @@ class TrippleToSolrDoc
       end
     end
 
-    @@logger.info("before weeding out there were #{@@redis.dbsize}")
+    @@logger.info("before weeding out there were #{@@gdbm.length}")
 
     # Weed out out old /deprecated subjects,
     # changeNote predicates point to a bnode lines.
@@ -86,31 +91,28 @@ class TrippleToSolrDoc
     #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
     #  ...and looking at _:bnode12683670136320746870
     #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
-    @@redis.scan_each(match: "http*") do |subject|
-      attributes = Marshal.load(@@redis.get(subject))
+    @@gdbm.delete_if do |subject, attrs|
+      attributes = Marshal.load(attrs)
       change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
-      bnode_for_this = @@redis.get(change_history)
-
-      if change_history && bnode_for_this
-        bnodes_hash = Marshal.load(bnode_for_this)
-        if bnodes_hash['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
-          @@redis.del(subject)
-        end
-      end
+      change_history && @@gdbm[change_history] && Marshal.load(@@gdbm[change_history])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
     end
 
-    @@logger.info("after weeding out deprecated there were #{@@redis.dbsize}")
+    @@logger.info("after weeding out deprecated there were #{@@gdbm.length}")
 
     # Weed out bnodes, you have to do this after weeding out deprecateds, not at the same time
-    @@redis.scan_each(match: "*bnode*") do |subject|
-      @@redis.del(subject)
+    @@gdbm.delete_if do |subject, attrs|
+      !subject.include?('http')
     end
 
-    @@logger.info("after weeding out bnodes there were #{@@redis.dbsize}")
+    @@logger.info("after weeding out bnodes there were #{@@gdbm.length}")
 
-    solr_docs = []
-    @@redis.scan_each do |subject|
-      attributes = Marshal.load(@@redis.get(subject))
+    # solr_docs = []
+    output_json_file = File.new(filename_string.gsub('db', 'json'), 'w')
+
+    @@logger.info("writing output as JSON to #{output_json_file.path}")
+
+    @@gdbm.each do |subject, attrs|
+      attributes = Marshal.load(attrs)
 
       new_document = {
         uri: subject,
@@ -126,9 +128,9 @@ class TrippleToSolrDoc
         alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
       }
 
-      solr_docs << new_document
+      output_json_file.puts(JSON.generate(new_document))
     end
-    solr_docs
+    output_json_file.close
   end
 
   # These files are FULL of statements we don't care about.
