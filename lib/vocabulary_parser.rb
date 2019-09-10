@@ -14,18 +14,18 @@ class VocabularyParser
   def parse!
     case @vocabulary
     when 'rdacarriers'
-      post_carrier_authorities_to_solr(@source)
+      generate_carrier_solr_docs(@source)
     when 'graphic_materials'
-      post_graphic_materials_to_solr(@source)
+      generate_graphic_materials_solr_docs(@source)
     when 'genre_and_form'
-      post_genre_and_form_to_solr(@source)
+      generate_genre_and_form_solr_docs(@source)
     when 'names'
-      post_name_to_solr(@source)
+      generate_name_solr_docs(@source)
     end
     # @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
   end
 
-  def post_name_to_solr(source)
+  def generate_name_solr_docs(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: :auto,
       start_at_line: @start_at_line,
@@ -36,7 +36,7 @@ class VocabularyParser
     )
   end
 
-  def post_genre_and_form_to_solr(source)
+  def generate_genre_and_form_solr_docs(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: 'genreform',
       start_at_line: @start_at_line,
@@ -47,7 +47,7 @@ class VocabularyParser
     )
   end
 
-  def post_graphic_materials_to_solr(source)
+  def generate_graphic_materials_solr_docs(source)
     solr_docs = TrippleToSolrDoc.convert!(file: source,
       term_type: 'concept',
       start_at_line: @start_at_line,
@@ -59,7 +59,7 @@ class VocabularyParser
   end
 
   # This needs to be reimplemented to  deal with N-Triples
-  def post_carrier_authorities_to_solr(source = 'http://id.loc.gov/vocabulary/carriers.json')
+  def generate_carrier_solr_docs(source = 'http://id.loc.gov/vocabulary/carriers.json')
     # uri = URI.parse(source)
     # json = JSON.parse(uri.read)
     # solr_docs = []
