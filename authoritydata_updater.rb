@@ -5,7 +5,7 @@ require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form', 'names'].freeze
+SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form', 'names', 'subjects'].freeze
 
 opt_parser = OptionParser.new do |opts|
   opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary genre_and_form --source ./authority-file.nt'

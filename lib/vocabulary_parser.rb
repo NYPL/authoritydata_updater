@@ -21,6 +21,8 @@ class VocabularyParser
       generate_genre_and_form_solr_docs(@source)
     when 'names'
       generate_name_solr_docs(@source)
+    when 'subjects'
+      generate_subject_solr_docs(@source)
     end
     # @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
   end
@@ -43,6 +45,17 @@ class VocabularyParser
       db_file_name: @db_file_name,
       authority_code: 'lcgft',
       authority_name: 'Library of Congress Genre/Form Terms for Library and Archival Materials',
+      unique_id_prefix: 'lcgft'
+    )
+  end
+
+  def generate_subject_solr_docs(source)
+    solr_docs = TrippleToSolrDoc.convert!(file: source,
+      term_type: :auto,
+      start_at_line: @start_at_line,
+      db_file_name: @db_file_name,
+      authority_code: 'lcsh',
+      authority_name: 'Library of Congress subject headings',
       unique_id_prefix: 'lcgft'
     )
   end
