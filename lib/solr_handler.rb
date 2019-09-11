@@ -39,6 +39,6 @@ class SolrHandler
     add_response = solr.add(docs.compact)
     @@logger.info("add response: #{add_response}")
     commit_response = solr.commit
-    @@logger.info("delete commit response: #{commit_response}")
+    @@logger.info("add commit response: #{commit_response}")
   end
 end
