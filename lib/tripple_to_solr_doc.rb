@@ -9,7 +9,7 @@ include RDF
 class TrippleToSolrDoc
   # The intermediate, rdbm file can get GIANT with names
   # This strips deprecated subjects every Nth iteration
-  COMPACT_EVERY = 100000
+  COMPACT_EVERY = 1000000
 
   NS_TYPE_TO_TERM_TYPE_MAPPING = {
     'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
@@ -85,8 +85,8 @@ class TrippleToSolrDoc
     @@logger.info("after weeding out deprecated there were #{@@gdbm.length}")
 
     # Weed out bnodes, you have to do this after weeding out deprecateds, not at the same time
-    @@gdbm.delete_if do |subject, attrs|
-      !subject.include?('http')
+    @@gdbm.each_pair do |subject, attrs|
+      @@gdbm.delete(subject) if !subject.include?('http')
     end
 
     @@logger.info("after weeding out bnodes there were #{@@gdbm.length}")
@@ -96,7 +96,7 @@ class TrippleToSolrDoc
 
     @@logger.info("writing output as JSON to #{output_json_file.path}")
 
-    @@gdbm.each do |subject, attrs|
+    @@gdbm.each_pair do |subject, attrs|
       attributes = Marshal.load(attrs)
 
       new_document = {
