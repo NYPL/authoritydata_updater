@@ -4,10 +4,13 @@ require 'nypl_log_formatter'
 require 'rdf'
 require 'linkeddata'
 require 'gdbm'
-
 include RDF
 
 class TrippleToSolrDoc
+  # The intermediate, rdbm file can get GIANT with names
+  # This strips deprecated subjects every Nth iteration
+  COMPACT_EVERY = 100000
+
   NS_TYPE_TO_TERM_TYPE_MAPPING = {
     'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
     'http://www.loc.gov/mads/rdf/v1#Geographic' => 'geographic',
@@ -20,14 +23,6 @@ class TrippleToSolrDoc
     'http://www.loc.gov/mads/rdf/v1#Title' => 'title',
     'http://www.loc.gov/mads/rdf/v1#ConferenceName' => 'name_conference'
   }.freeze
-
-  WORTHWHILE_PREDICATES = [
-    'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-    'http://www.loc.gov/mads/rdf/v1#adminMetadata',
-    'http://id.loc.gov/ontologies/RecordInfo#recordStatus',
-    'http://www.loc.gov/mads/rdf/v1#authoritativeLabel',
-    'http://www.w3.org/2004/02/skos/core#prefLabel'
-  ].freeze
 
   @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
@@ -49,7 +44,7 @@ class TrippleToSolrDoc
           predicate_string = statement.predicate.to_s
           @@logger.debug("parsing statement # #{statement_count}")
           subject_url = statement.subject.to_s
-          if worthwhile_statement?(statement)
+
             if @@gdbm.has_key?(subject_url)
               # We've seen this subject before...
               this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
@@ -75,26 +70,17 @@ class TrippleToSolrDoc
                 @@gdbm[subject_url] = initial_hash
               end
             end
-          else
-            @@logger.info('skipping a statement')
-          end
         end
       end
+
+      if statement_count % COMPACT_EVERY == 0
+        delete_and_compact
+      end
+
     end
 
     @@logger.info("before weeding out there were #{@@gdbm.length}")
-
-    # Weed out out old /deprecated subjects,
-    # changeNote predicates point to a bnode lines.
-    # e.g.
-    #  <http://id.loc.gov/vocabulary/graphicMaterials/tgm003368> <http://www.loc.gov/mads/rdf/v1#adminMetadata> _:bnode12683670136320746870
-    #  ...and looking at _:bnode12683670136320746870
-    #  :bnode12683670136320746870 <http://id.loc.gov/ontologies/RecordInfo#recordStatus'> "deprecated"
-    @@gdbm.delete_if do |subject, attrs|
-      attributes = Marshal.load(attrs)
-      change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
-      change_history && @@gdbm[change_history] && Marshal.load(@@gdbm[change_history])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
-    end
+    delete_and_compact
 
     @@logger.info("after weeding out deprecated there were #{@@gdbm.length}")
 
@@ -132,12 +118,25 @@ class TrippleToSolrDoc
     output_json_file.close
   end
 
-  # These files are FULL of statements we don't care about.
-  # Statements that we never use to post info to Solr.
-  # As we parse the N-tripple file, we can skip even considering
-  # this line if it's dealing with a predicate we don't care about (e.g. http://www.w3.org/2000/01/rdf-schema#seeAlso)
-  def self.worthwhile_statement?(statement)
-    WORTHWHILE_PREDICATES.include?(statement.predicate.to_s)
+  def self.delete_and_compact
+    @@logger.info("Compacting....")
+    deletable_subjects = []
+    @@gdbm.each_pair do |subject, attrs|
+      attributes = Marshal.load(attrs)
+      change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
+      deletable = change_history && @@gdbm[change_history] && Marshal.load(@@gdbm[change_history])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
+      if deletable
+        deletable_subjects << subject
+        @@logger.info('marking subject as deletable', subjectUrl: subject)
+      end
+    end
+    @@logger.info("Deleting #{deletable_subjects.length} keys")
+    if deletable_subjects.length > 0
+      deletable_subjects.each do |subject|
+        @@gdbm.delete(subject)
+      end
+    @@gdbm.reorganize
+    end
   end
 
   def self.detect_term_type(predicate_to_object_mapping)
