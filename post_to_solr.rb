@@ -6,7 +6,7 @@ require 'nypl_log_formatter'
 require 'optparse'
 require File.join(__dir__, 'lib', 'solr_handler')
 
-DOCS_PER_POST = 2000
+DOCS_PER_POST = 10000
 
 @options = {}
 
@@ -29,10 +29,15 @@ opt_parser = OptionParser.new do |opts|
     @options[:solr_password] = password
   end
 
+  opts.on_tail('-n=', '--line-number', 'Start parsing on line (helpful if restarting)') do |start_at_line|
+    @options[:start_at_line] = start_at_line.to_i
+  end
+
   opts.on_tail('-h', '--help', 'Show this message') do
     puts opts
     exit
   end
+
 end
 
 opt_parser.parse!
@@ -41,7 +46,7 @@ SOLR_USERNAME = @options[:solr_username]
 SOLR_PASSWORD = @options[:solr_password]
 
 def post_to_solr(documents)
-  puts "I am pushing #{documents.length} to Solr"
+  puts "POSTing #{documents.length} documents to Solr"
   documents_as_hashes = documents.map { |document| JSON.parse(document) }
   response = SolrHandler.send_docs_to_solr(@options[:solr_url], documents_as_hashes)
 end
@@ -49,6 +54,11 @@ end
 document_buffer = []
 
 File.open(@options[:input_file], 'r').each_with_index do |line, i|
+
+  if @options[:start_at_line] && i < @options[:start_at_line]
+    next
+  end
+
   if i == 0
      authority_code = JSON.parse(line)['authority_code']
      throw "can't delete, won't continue" unless authority_code
@@ -57,6 +67,7 @@ File.open(@options[:input_file], 'r').each_with_index do |line, i|
 
   document_buffer << line
   if document_buffer.length == DOCS_PER_POST
+    puts "POSTing at line #{i}"
     post_to_solr(document_buffer)
     document_buffer = []
   end
