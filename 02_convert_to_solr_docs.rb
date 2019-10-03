@@ -1,14 +1,14 @@
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
+
 require 'optparse'
 require File.join(__dir__, 'lib', 'vocabulary_parser')
 
 options = {}
-SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form'].freeze
-
-solr_username = nil
-solr_password = nil
+SUPPORTED_VOCABULARIES = ['rdacarriers', 'graphic_materials', 'genre_and_form', 'names', 'subjects'].freeze
 
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary rdacarriers --source http://example.com/authority-file.xml --solrUrl http://solr.example.com:8983/solr --username groucho --password swordfish'
+  opts.banner = 'Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary genre_and_form --source ./authority-file.nt'
   opts.separator ''
   opts.separator "Supported vocabularies: #{SUPPORTED_VOCABULARIES.join(', ')}"
   opts.separator ''
@@ -21,16 +21,12 @@ opt_parser = OptionParser.new do |opts|
     options[:source] = source
   end
 
-  opts.on('-solr=', '--solrUrl', 'Path or URL to SOLR core') do |solr_url|
-    options[:solr_url] = solr_url
+  opts.on('-n=', '--start-on-line', "Start parsing on this line of the .nt file") do |line_number|
+    options[:start_at_line] = line_number.to_i
   end
 
-  opts.on('-u=', '--username', 'Solr username') do |username|
-    solr_username = username
-  end
-
-  opts.on('-p=', '--password', 'Solr password') do |password|
-    solr_password = password
+  opts.on('-d=', '--db-file', "Use an existing db file, probably used with -n because a previous run was interrupted") do |db_file_name|
+    options[:db_file_name] = db_file_name
   end
 
   opts.on_tail('-h', '--help', 'Show this message') do
@@ -40,9 +36,6 @@ opt_parser = OptionParser.new do |opts|
 end
 
 opt_parser.parse!
-
-SOLR_USERNAME = solr_username
-SOLR_PASSWORD = solr_password
 
 # TODO: These's probably a nicer way to raise these exceptions or move this
 # into VocabularyParser's initializer
@@ -58,11 +51,5 @@ if options[:source].nil?
   exit
 end
 
-if options[:solr_url].nil?
-  puts 'You need to supply a valid solr url to post docs to'
-  puts opt_parser
-  exit
-end
-
-parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], solr_url: options[:solr_url])
+parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], solr_url: options[:solr_url], start_at_line: options[:start_at_line], db_file_name: options[:db_file_name])
 parser.parse!
