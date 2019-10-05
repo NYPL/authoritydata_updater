@@ -85,8 +85,15 @@ class TrippleToSolrDoc
     @@logger.info("after weeding out deprecated there were #{@@gdbm.length}")
 
     # Weed out bnodes, you have to do this after weeding out deprecateds, not at the same time
+    deletable_bnodes = []
     @@gdbm.each_pair do |subject, attrs|
-      @@gdbm.delete(subject) if !subject.include?('http')
+      if !subject.include?('http')
+        deletable_bnodes << subject
+      end
+    end
+
+    deletable_bnodes.each do |bnode_subject|
+      @@gdbm.delete(bnode_subject)
     end
 
     @@logger.info("after weeding out bnodes there were #{@@gdbm.length}")
@@ -124,6 +131,7 @@ class TrippleToSolrDoc
     @@gdbm.each_pair do |subject, attrs|
       attributes = Marshal.load(attrs)
       change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
+
       deletable = change_history && @@gdbm[change_history] && Marshal.load(@@gdbm[change_history])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
       if deletable
         deletable_subjects << subject
