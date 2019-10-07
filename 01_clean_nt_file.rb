@@ -8,7 +8,9 @@ WORTHWHILE_PREDICATES = [
   'http://www.loc.gov/mads/rdf/v1#adminMetadata',
   'http://id.loc.gov/ontologies/RecordInfo#recordStatus',
   'http://www.loc.gov/mads/rdf/v1#authoritativeLabel',
-  'http://www.w3.org/2004/02/skos/core#prefLabel'
+  'http://www.w3.org/2004/02/skos/core#prefLabel',
+  'http://www.w3.org/2004/02/skos/core#altLabel',
+  'http://www.w3.org/2000/01/rdf-schema#label'
 ].freeze
 
 input_file = File.open(ARGV[0], 'r')
