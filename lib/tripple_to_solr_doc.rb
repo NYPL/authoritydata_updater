@@ -11,6 +11,10 @@ class TrippleToSolrDoc
   # This strips deprecated subjects every Nth iteration
   COMPACT_EVERY = 1000000
 
+  # Almost all predicates show up once per Subject, but a subject can have
+  # multiple predicates e.g "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  MULTI_PREDICATES = ['http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://www.w3.org/2004/02/skos/core#altLabel'].freeze
+
   NS_TYPE_TO_TERM_TYPE_MAPPING = {
     'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
     'http://www.loc.gov/mads/rdf/v1#Geographic' => 'geographic',
@@ -37,8 +41,7 @@ class TrippleToSolrDoc
       if start_at_line && statement_count < start_at_line
         next
       end
-      # Almost all predicates show up once per Subject, but a subject can have
-      # multiple "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" predicates
+
       RDF::NTriples::Reader.new(line) do |reader|
         reader.each_statement do |statement|
           predicate_string = statement.predicate.to_s
@@ -49,7 +52,7 @@ class TrippleToSolrDoc
               # We've seen this subject before...
               this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
 
-              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              if MULTI_PREDICATES.include?(predicate_string)
                 if this_subjects_attributes[predicate_string]
                   this_subjects_attributes[predicate_string] << statement.object.to_s
                 else
@@ -62,7 +65,7 @@ class TrippleToSolrDoc
               @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
             else
               # We've never seen this subject before
-              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              if MULTI_PREDICATES.include?(predicate_string)
                 initial_hash = Marshal.dump(predicate_string => [statement.object.to_s])
                 @@gdbm[subject_url] = initial_hash
               else
