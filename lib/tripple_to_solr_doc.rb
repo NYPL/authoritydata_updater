@@ -108,21 +108,31 @@ class TrippleToSolrDoc
 
       new_document = {
         uri: subject,
-        term: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
-        term_idx: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
+        term: look_for_term(attributes),
+        term_idx: look_for_term(attributes),
         term_type: term_type == :auto ? detect_term_type(attributes) : term_type,
         record_id: File.basename(subject),
         language: 'en',
         authority_code: authority_code,
         authority_name: authority_name,
         unique_id: "#{unique_id_prefix}_#{File.basename(subject)}",
-        alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
-        alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
+        alternate_term_idx: look_for_alt_terms(attributes),
+        alternate_term: look_for_alt_terms(attributes)
       }
 
       output_json_file.puts(JSON.generate(new_document))
     end
     output_json_file.close
+  end
+
+  # Terms are stored in different places depending on LOC or Getty
+  def self.look_for_term(attributes)
+    attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
+  end
+
+  # Alternate Terms are stored in different places depending on LOC or Getty
+  def self.look_for_alt_terms(attributes)
+    attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
   end
 
   def self.delete_and_compact
