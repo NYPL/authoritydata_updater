@@ -11,6 +11,10 @@ class TrippleToSolrDoc
   # This strips deprecated subjects every Nth iteration
   COMPACT_EVERY = 1000000
 
+  # Almost all predicates show up once per Subject, but a subject can have
+  # multiple predicates e.g "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  MULTI_PREDICATES = ['http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://www.w3.org/2004/02/skos/core#altLabel', 'http://www.w3.org/2004/02/skos/core#prefLabel'].freeze
+
   NS_TYPE_TO_TERM_TYPE_MAPPING = {
     'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
     'http://www.loc.gov/mads/rdf/v1#Geographic' => 'geographic',
@@ -37,8 +41,7 @@ class TrippleToSolrDoc
       if start_at_line && statement_count < start_at_line
         next
       end
-      # Almost all predicates show up once per Subject, but a subject can have
-      # multiple "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" predicates
+
       RDF::NTriples::Reader.new(line) do |reader|
         reader.each_statement do |statement|
           predicate_string = statement.predicate.to_s
@@ -49,7 +52,7 @@ class TrippleToSolrDoc
               # We've seen this subject before...
               this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
 
-              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              if MULTI_PREDICATES.include?(predicate_string)
                 if this_subjects_attributes[predicate_string]
                   this_subjects_attributes[predicate_string] << statement.object.to_s
                 else
@@ -62,7 +65,7 @@ class TrippleToSolrDoc
               @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
             else
               # We've never seen this subject before
-              if predicate_string == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              if MULTI_PREDICATES.include?(predicate_string)
                 initial_hash = Marshal.dump(predicate_string => [statement.object.to_s])
                 @@gdbm[subject_url] = initial_hash
               else
@@ -98,6 +101,29 @@ class TrippleToSolrDoc
 
     @@logger.info("after weeding out bnodes there were #{@@gdbm.length}")
 
+    # AAT has a lot of subjects that aren't about the term,
+    # for example http://vocab.getty.edu/aat/term/1000471898-nl, and http://vocab.getty.edu/aat/rev/5002234393
+    # Delete stuff that aren't terms (http://vocab.getty.edu/aat/300015004)
+    if authority_code == 'aat'
+      # http://vocab.getty.edu/aat/[ANY-NUMBER-OF-DIGITS][END-OF-STRING]
+      aat_subject_regex = /http:\/\/vocab.getty.edu\/aat\/\d+\z/
+      deletable_keys = []
+
+      @@gdbm.each_pair do |subject, attrs|
+        if (aat_subject_regex =~ subject).nil?
+          deletable_keys << subject
+        end
+      end
+
+      @@logger.info("deleting #{deletable_keys.length} weird AAT subjects")
+      deletable_keys.each do |deletable_key|
+        @@gdbm.delete(deletable_key)
+      end
+
+      @@logger.info("after weeding out weird AAT subjects there were #{@@gdbm.length}")
+
+    end
+
     # solr_docs = []
     output_json_file = File.new(filename_string.gsub('db', 'json'), 'w')
 
@@ -108,21 +134,32 @@ class TrippleToSolrDoc
 
       new_document = {
         uri: subject,
-        term: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
-        term_idx: attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel'),
+        term: look_for_term(attributes),
+        term_idx: look_for_term(attributes),
         term_type: term_type == :auto ? detect_term_type(attributes) : term_type,
         record_id: File.basename(subject),
         language: 'en',
         authority_code: authority_code,
         authority_name: authority_name,
         unique_id: "#{unique_id_prefix}_#{File.basename(subject)}",
-        alternate_term_idx: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel'),
-        alternate_term: attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
+        alternate_term_idx: look_for_alt_terms(attributes),
+        alternate_term: look_for_alt_terms(attributes)
       }
 
       output_json_file.puts(JSON.generate(new_document))
     end
     output_json_file.close
+  end
+
+  # Terms are stored in different places depending on LOC or Getty
+  def self.look_for_term(attributes)
+    loc = attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
+    loc || attributes["http://www.w3.org/2004/02/skos/core#prefLabel"]&.first
+  end
+
+  # Getty & LOC keep Alternate Terms in http://www.w3.org/2004/02/skos/core#altLabel
+  def self.look_for_alt_terms(attributes)
+    attributes.dig('http://www.w3.org/2004/02/skos/core#altLabel')
   end
 
   def self.delete_and_compact

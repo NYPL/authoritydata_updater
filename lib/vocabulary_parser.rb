@@ -23,6 +23,8 @@ class VocabularyParser
       generate_name_solr_docs(@source)
     when 'subjects'
       generate_subject_solr_docs(@source)
+    when 'aat'
+      generate_aat_solr_docs(@source)
     end
     # @logger.info("Finished posting #{@vocabulary} from #{@source} to #{@solr_url}")
   end
@@ -35,6 +37,17 @@ class VocabularyParser
       authority_code: 'naf',
       authority_name: 'LC/NACO authority file',
       unique_id_prefix: 'naf'
+    )
+  end
+
+  def generate_aat_solr_docs(source)
+    solr_docs = TrippleToSolrDoc.convert!(file: source,
+      term_type: 'concept',
+      start_at_line: @start_at_line,
+      db_file_name: @db_file_name,
+      authority_code: 'aat',
+      authority_name: 'Art and Architecture Thesaurus',
+      unique_id_prefix: 'aat'
     )
   end
 

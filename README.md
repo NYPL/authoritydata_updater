@@ -62,7 +62,7 @@ See the optional `-n` and `-d` flags that can be used to resume parsing.
 
     Usage: ruby authoritydata_updater.rb [options] \n Exaxmple: ruby authoritydata_updater.rb --vocabulary genre_and_form --source ./authority-file.nt
 
-    Supported vocabularies: rdacarriers, graphic_materials, genre_and_form, names, subjects
+    Supported vocabularies: rdacarriers, graphic_materials, genre_and_form, names, subjects, aat
 
         -v, --vocabulary=                The type of vocabularies in the source file
         -s, --source=                    Path or URL to vocabulary file
@@ -124,7 +124,8 @@ It is not deployed to any remote environments.
 -   [Genre & Form Terms (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/authoritiesgenreForms.nt.madsrdf.zip)
 -   [Graphic Materials (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/vocabularygraphicMaterials.nt.both.zip)
 -   [Names (as N-Tripple/nt file)](http://id.loc.gov/authorities/names.nt)
--   [Subjects (as N-Tripple/nt file)](//id.loc.gov/static/data/downloads/authoritiessubjects.nt.madsrdf.zip)
+-   [Subjects (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/authoritiessubjects.nt.madsrdf.zip)
+-   [Gatty AAT (as N-Tripple/nt file)](http://vocab.getty.edu/) (Documentation and Downloads > Datasets > AAT)
 
 ## Adding A New Vocabulary
 
