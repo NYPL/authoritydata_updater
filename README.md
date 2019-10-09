@@ -5,6 +5,7 @@ search queries a Solr index. The documents in that index need to be updated peri
 
 **This tool parses various vocabulary files and POSTS their contents to a Solr index.**  
 Locally - you can point it to [a dockerized Solr 3.5 that has a core named "authoritydata"](https://github.com/NYPL/authoritydata_solr_docker).
+This repository's [docker-compose.yml](./docker-compose.yml) comes with that authoritydata solr 3.5 core.
 
 ## Building
 
