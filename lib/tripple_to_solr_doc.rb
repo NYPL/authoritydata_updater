@@ -13,7 +13,7 @@ class TrippleToSolrDoc
 
   # Almost all predicates show up once per Subject, but a subject can have
   # multiple predicates e.g "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-  MULTI_PREDICATES = ['http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://www.w3.org/2004/02/skos/core#altLabel'].freeze
+  MULTI_PREDICATES = ['http://www.w3.org/1999/02/22-rdf-syntax-ns#type', 'http://www.w3.org/2004/02/skos/core#altLabel', 'http://www.w3.org/2004/02/skos/core#prefLabel'].freeze
 
   NS_TYPE_TO_TERM_TYPE_MAPPING = {
     'http://www.loc.gov/mads/rdf/v1#Topic' => 'topic',
@@ -101,6 +101,29 @@ class TrippleToSolrDoc
 
     @@logger.info("after weeding out bnodes there were #{@@gdbm.length}")
 
+    # AAT has a lot of subjects that aren't about the term,
+    # for example http://vocab.getty.edu/aat/term/1000471898-nl, and http://vocab.getty.edu/aat/rev/5002234393
+    # Delete stuff that aren't terms (http://vocab.getty.edu/aat/300015004)
+    if authority_code == 'aat'
+      # http://vocab.getty.edu/aat/[ANY-NUMBER-OF-DIGITS][END-OF-STRING]
+      aat_subject_regex = /http:\/\/vocab.getty.edu\/aat\/\d+\z/
+      deletable_keys = []
+
+      @@gdbm.each_pair do |subject, attrs|
+        if (aat_subject_regex =~ subject).nil?
+          deletable_keys << subject
+        end
+      end
+
+      @@logger.info("deleting #{deletable_keys.length} weird AAT subjects")
+      deletable_keys.each do |deletable_key|
+        @@gdbm.delete(deletable_key)
+      end
+
+      @@logger.info("after weeding out weird AAT subjects there were #{@@gdbm.length}")
+
+    end
+
     # solr_docs = []
     output_json_file = File.new(filename_string.gsub('db', 'json'), 'w')
 
@@ -130,12 +153,13 @@ class TrippleToSolrDoc
 
   # Terms are stored in different places depending on LOC or Getty
   def self.look_for_term(attributes)
-    attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
+    loc = attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
+    loc || attributes["http://www.w3.org/2004/02/skos/core#prefLabel"]&.first
   end
 
-  # Alternate Terms are stored in different places depending on LOC or Getty
+  # Getty & LOC keep Alternate Terms in http://www.w3.org/2004/02/skos/core#altLabel
   def self.look_for_alt_terms(attributes)
-    attributes.dig('http://www.w3.org/2004/02/skos/core#prefLabel')
+    attributes.dig('http://www.w3.org/2004/02/skos/core#altLabel')
   end
 
   def self.delete_and_compact
