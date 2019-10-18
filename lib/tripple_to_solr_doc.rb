@@ -54,22 +54,22 @@ class TrippleToSolrDoc
 
               if MULTI_PREDICATES.include?(predicate_string)
                 if this_subjects_attributes[predicate_string]
-                  this_subjects_attributes[predicate_string] << statement.object.to_s
+                  this_subjects_attributes[predicate_string] << statement.object
                 else
                   # This is the first time we've seen syntax-ns#type
-                  this_subjects_attributes[predicate_string] = [statement.object.to_s]
+                  this_subjects_attributes[predicate_string] = [statement.object]
                 end
               else
-                this_subjects_attributes[predicate_string] = statement.object.to_s
+                this_subjects_attributes[predicate_string] = statement.object
               end
               @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
             else
               # We've never seen this subject before
               if MULTI_PREDICATES.include?(predicate_string)
-                initial_hash = Marshal.dump(predicate_string => [statement.object.to_s])
+                initial_hash = Marshal.dump(predicate_string => [statement.object])
                 @@gdbm[subject_url] = initial_hash
               else
-                initial_hash = Marshal.dump(predicate_string => statement.object.to_s)
+                initial_hash = Marshal.dump(predicate_string => statement.object)
                 @@gdbm[subject_url] = initial_hash
               end
             end
@@ -154,12 +154,19 @@ class TrippleToSolrDoc
   # Terms are stored in different places depending on LOC or Getty
   def self.look_for_term(attributes)
     loc = attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
-    loc || attributes["http://www.w3.org/2004/02/skos/core#prefLabel"]&.first
+    if loc
+      return loc.to_s
+    else
+      attributes["http://www.w3.org/2004/02/skos/core#prefLabel"].find{|label| label.language == :en }&.to_s
+    end
   end
 
   # Getty & LOC keep Alternate Terms in http://www.w3.org/2004/02/skos/core#altLabel
   def self.look_for_alt_terms(attributes)
-    attributes.dig('http://www.w3.org/2004/02/skos/core#altLabel')
+    alt_term = attributes.dig('http://www.w3.org/2004/02/skos/core#altLabel')
+    if alt_term
+      return alt_term.map(&:to_s)
+    end
   end
 
   def self.delete_and_compact
