@@ -122,7 +122,7 @@ It is not deployed to any remote environments.
 
 ## Supported Vocabularies
 
--   [Genre & Form Terms (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/authoritiesgenreForms.nt.madsrdf.zip)
+-   [Genre & Form Terms (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/authoritiesgenreForms.nt.madsrdf.zip)
 -   [Graphic Materials (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/vocabularygraphicMaterials.nt.both.zip)
 -   [Names (as N-Tripple/nt file)](http://id.loc.gov/authorities/names.nt)
 -   [Subjects (as N-Tripple/nt file)](http://id.loc.gov/static/data/downloads/authoritiessubjects.nt.madsrdf.zip)
