@@ -1,21 +1,33 @@
-version: '3.4'
+version: "3"
 services:
   updater:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    env_file:
-      - ./.env
+    build: .
+    environment:
+      - SOLR_URL=http://solr:8983/solr
     volumes:
-      - '.:/opt/authoritydata_udpater'
-    command: ruby /opt/authoritydata_udpater/authoritydata_updater.rb --vocabulary $VOCABULARY --source $SOURCE_OF_TERMS --solrUrl $SOLR_URL --username $USERNAME --password $PASSWORD
+      - ".:/opt/updater"
     depends_on:
-    - solr
+      - solr
+
   solr:
-    build:
-      context: ../authoritydata_solr_docker
-      dockerfile: Dockerfile
-      target: production
+    image: solr:8.5
     ports:
-      - '8983:8983'
+      - "8983:8983"
+    environment:
+      - ZK_HOST=zookeeper:2181
+    volumes:
+      - solr-data:/var/solr
+      - ./data/solr/authoritydata:/opt/solr/server/solr/configsets/authoritydata
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: zookeeper:3.6
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:288:388;2181
+
+volumes:
+  solr-data:
