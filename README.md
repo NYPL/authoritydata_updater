@@ -126,7 +126,7 @@ It is not deployed to any remote environments.
 -   [Graphic Materials (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/vocabularygraphicMaterials.nt.both.zip)
 -   [Names (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/lcnaf.madsrdf.nt.zip)
 -   [Subjects (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/lcsh.madsrdf.nt.zip)
--   [Gatty AAT (as N-Tripple/nt file)](http://vocab.getty.edu/) (Documentation and Downloads > Datasets > AAT)
+-   [Getty AAT (as N-Tripple/nt file)](http://vocab.getty.edu/dataset/aat/full.zip)
 
 ## Adding A New Vocabulary
 
