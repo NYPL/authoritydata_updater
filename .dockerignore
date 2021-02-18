@@ -8,6 +8,7 @@
 *.zip
 *.both
 /tmp
+/data
 
 # The files we output when parsing
 *.db
