@@ -176,7 +176,7 @@ class TrippleToSolrDoc
       attributes = Marshal.load(attrs)
       change_history = attributes['http://www.loc.gov/mads/rdf/v1#adminMetadata']
 
-      deletable = change_history && @@gdbm[change_history] && Marshal.load(@@gdbm[change_history])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
+      deletable = change_history && @@gdbm[change_history.to_s] && Marshal.load(@@gdbm[change_history.to_s])['http://id.loc.gov/ontologies/RecordInfo#recordStatus'] == 'deprecated'
       if deletable
         deletable_subjects << subject
         @@logger.info('marking subject as deletable', subjectUrl: subject)
