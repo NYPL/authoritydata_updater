@@ -31,7 +31,7 @@ class TrippleToSolrDoc
   @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
   def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
-    filename_string = db_file_name || "#{authority_code}_#{Time.now.utc.to_i}.db"
+    filename_string = db_file_name || "data/nypl/#{authority_code}_#{Time.now.utc.to_i}.db"
     @@gdbm = GDBM.new(filename_string)
 
     statement_count = 0
@@ -153,11 +153,14 @@ class TrippleToSolrDoc
 
   # Terms are stored in different places depending on LOC or Getty
   def self.look_for_term(attributes)
-    loc = attributes.dig('http://www.loc.gov/mads/rdf/v1#authoritativeLabel')
-    if loc
-      return loc.to_s
+    if attributes['http://www.loc.gov/mads/rdf/v1#authoritativeLabel']
+      return attributes['http://www.loc.gov/mads/rdf/v1#authoritativeLabel'].to_s
+    elsif attributes["http://www.w3.org/2004/02/skos/core#prefLabel"]
+      return attributes["http://www.w3.org/2004/02/skos/core#prefLabel"].find{|label| label.language == :en }&.to_s
+    elsif attributes["http://www.w3.org/2000/01/rdf-schema#label"]
+      return attributes["http://www.w3.org/2000/01/rdf-schema#label"].to_s
     else
-      attributes["http://www.w3.org/2004/02/skos/core#prefLabel"].find{|label| label.language == :en }&.to_s
+      raise "could not find term in attributes: #{attributes}"
     end
   end
 
