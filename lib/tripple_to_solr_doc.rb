@@ -129,6 +129,8 @@ class TrippleToSolrDoc
 
     @@logger.info("writing output as JSON to #{output_json_file.path}")
 
+    missing_terms = []
+
     @@gdbm.each_pair do |subject, attrs|
       attributes = Marshal.load(attrs)
 
@@ -146,9 +148,16 @@ class TrippleToSolrDoc
         alternate_term: look_for_alt_terms(attributes)
       }
 
+      if new_document[:term]
+        output_json_file.puts(JSON.generate(new_document))
+      else
+        missing_terms << new_document
+      end
+
       output_json_file.puts(JSON.generate(new_document))
     end
-    output_json_file.close
+
+    @@logger.info("skipped #{missing_terms.size} documents missing terms")
   end
 
   # Terms are stored in different places depending on LOC or Getty
@@ -160,7 +169,7 @@ class TrippleToSolrDoc
     elsif attributes["http://www.w3.org/2000/01/rdf-schema#label"]
       return attributes["http://www.w3.org/2000/01/rdf-schema#label"].to_s
     else
-      raise "could not find term in attributes: #{attributes}"
+      return nil
     end
   end
 
