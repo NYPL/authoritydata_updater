@@ -122,11 +122,11 @@ It is not deployed to any remote environments.
 
 ## Supported Vocabularies
 
--   [Genre & Form Terms (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/authoritiesgenreForms.nt.madsrdf.zip)
--   [Graphic Materials (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/vocabularygraphicMaterials.nt.both.zip)
--   [Names (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/lcnaf.madsrdf.nt.zip)
--   [Subjects (as N-Tripple/nt file)](https://lds-downloads.s3.amazonaws.com/lcsh.madsrdf.nt.zip)
--   [Getty AAT (as N-Tripple/nt file)](http://vocab.getty.edu/dataset/aat/full.zip)
+- [Library of Congress Genre/Form Terms](https://id.loc.gov/authorities/genreForms.html) - [authoritiesgenreForms.nt.madsrdf.zip](https://lds-downloads.s3.amazonaws.com/authoritiesgenreForms.nt.madsrdf.zip)
+- [Library of Congress Thesaurus for Graphic Materials](https://id.loc.gov/vocabulary/graphicMaterials.html) - [vocabularygraphicMaterials.nt.both.zip](https://lds-downloads.s3.amazonaws.com/vocabularygraphicMaterials.nt.both.zip)
+- [Library of Congress Names](https://id.loc.gov/authorities/names.html) - [lcnaf.madsrdf.nt.zip](https://lds-downloads.s3.amazonaws.com/lcnaf.madsrdf.nt.zip)
+- [Library of Congress Subject Headings](https://id.loc.gov/authorities/subjects.html) - [lcsh.madsrdf.nt.zip](https://lds-downloads.s3.amazonaws.com/lcsh.madsrdf.nt.zip)
+- [Getty AAT](http://vocab.getty.edu/) - [aat/full.zip](http://vocab.getty.edu/dataset/aat/full.zip)
 
 ## Adding A New Vocabulary
 
