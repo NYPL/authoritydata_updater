@@ -153,8 +153,6 @@ class TrippleToSolrDoc
       else
         missing_terms << new_document
       end
-
-      output_json_file.puts(JSON.generate(new_document))
     end
 
     @@logger.info("skipped #{missing_terms.size} documents missing terms")
