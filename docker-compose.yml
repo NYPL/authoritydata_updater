@@ -6,6 +6,8 @@ services:
       - SOLR_URL=http://solr:8983/solr
     volumes:
       - ".:/opt/updater"
+    depends_on:
+      - solr
 
   solr:
     image: solr:8.5
