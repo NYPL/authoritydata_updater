@@ -45,7 +45,7 @@ class TrippleToSolrDoc
       RDF::NTriples::Reader.new(line) do |reader|
         reader.each_statement do |statement|
           predicate_string = statement.predicate.to_s
-          @@logger.debug("parsing statement # #{statement_count}")
+          @@logger.debug("parsing statement # #{statement_count}") if statement_count % 1000 == 0
           subject_url = statement.subject.to_s
 
             if @@gdbm.has_key?(subject_url)
