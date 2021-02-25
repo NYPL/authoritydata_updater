@@ -203,7 +203,7 @@ class TrippleToSolrDoc
 
   def self.detect_term_type(predicate_to_object_mapping)
     terms = NS_TYPE_TO_TERM_TYPE_MAPPING.keys
-    ns_types = predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type')
+    ns_types = predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type') || []
     NS_TYPE_TO_TERM_TYPE_MAPPING[(terms & ns_types)&.first]
   end
 end
