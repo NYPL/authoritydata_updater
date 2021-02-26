@@ -148,10 +148,10 @@ class TrippleToSolrDoc
         alternate_term: look_for_alt_terms(attributes)
       }
 
-      if new_document[:term]
-        output_json_file.puts(JSON.generate(new_document))
-      else
+      if new_document[:term].blank?
         missing_terms << new_document
+      else
+        output_json_file.puts(JSON.generate(new_document))
       end
     end
 
