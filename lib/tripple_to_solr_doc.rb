@@ -150,7 +150,7 @@ class TrippleToSolrDoc
 
       next if new_document[:term] !~ /[^[:space:]]/
       next if authority_code == 'lcsh' && !(new_document[:uri] =~ LOC_URI_REGEX)
-      #next if authority_code == 'lcsh' && new_document[:term_type] == 'complex_subject'
+      next if authority_code == 'lcsh' && new_document[:term_type] == 'complex_subject'
 
       output_json_file.puts(JSON.generate(new_document))
     end
@@ -201,7 +201,7 @@ class TrippleToSolrDoc
 
   def self.detect_term_type(predicate_to_object_mapping)
     terms = NS_TYPE_TO_TERM_TYPE_MAPPING.keys
-    ns_types = predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type') || []
+    ns_types = (predicate_to_object_mapping.dig('http://www.w3.org/1999/02/22-rdf-syntax-ns#type') || []).map(&:to_s)
     NS_TYPE_TO_TERM_TYPE_MAPPING[(terms & ns_types)&.first]
   end
 end
