@@ -28,6 +28,8 @@ class TrippleToSolrDoc
     'http://www.loc.gov/mads/rdf/v1#ConferenceName' => 'name_conference'
   }.freeze
 
+  LOC_URI_REGEX = /https?:\/\/.*\.loc.gov/
+
   @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
   def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
@@ -129,8 +131,6 @@ class TrippleToSolrDoc
 
     @@logger.info("writing output as JSON to #{output_json_file.path}")
 
-    missing_terms = []
-
     @@gdbm.each_pair do |subject, attrs|
       attributes = Marshal.load(attrs)
 
@@ -148,14 +148,12 @@ class TrippleToSolrDoc
         alternate_term: look_for_alt_terms(attributes)
       }
 
-      if new_document[:term] !~ /[^[:space:]]/ # equivalent to ActiveSupport `blank?`
-        missing_terms << new_document
-      else
-        output_json_file.puts(JSON.generate(new_document))
-      end
-    end
+      next if new_document[:term] !~ /[^[:space:]]/
+      next if authority_code == 'lcsh' && !(new_document[:uri] =~ LOC_URI_REGEX)
+      #next if authority_code == 'lcsh' && new_document[:term_type] == 'complex_subject'
 
-    @@logger.info("skipped #{missing_terms.size} documents missing terms")
+      output_json_file.puts(JSON.generate(new_document))
+    end
   end
 
   # Terms are stored in different places depending on LOC or Getty
