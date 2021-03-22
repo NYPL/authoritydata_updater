@@ -30,7 +30,7 @@ class TrippleToSolrDoc
 
   LOC_URI_REGEX = /https?:\/\/.*\.loc.gov/
 
-  @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
+  @@logger = NyplLogFormatter.new('tripple_to_solr_doc.log', level: 'debug')
 
   def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
     filename_string = db_file_name || "data/nypl/#{authority_code}_#{Time.now.utc.to_i}.db"
