@@ -21,6 +21,10 @@ opt_parser = OptionParser.new do |opts|
     options[:source] = source
   end
 
+  opts.on("-o=", "--output", "Output file") do |output|
+    options[:output] = output
+  end
+
   opts.on('-n=', '--start-on-line', "Start parsing on this line of the .nt file") do |line_number|
     options[:start_at_line] = line_number.to_i
   end
@@ -51,5 +55,11 @@ if options[:source].nil?
   exit
 end
 
-parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], solr_url: options[:solr_url], start_at_line: options[:start_at_line], db_file_name: options[:db_file_name])
+if options[:output].nil?
+  puts 'You need to supply a path to an output file'
+  puts opt_parser
+  exit
+end
+
+parser = VocabularyParser.new(vocabulary: options[:vocabulary], source: options[:source], output: options[:output], solr_url: options[:solr_url], start_at_line: options[:start_at_line], db_file_name: options[:db_file_name])
 parser.parse!

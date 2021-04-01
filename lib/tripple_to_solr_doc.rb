@@ -32,50 +32,55 @@ class TrippleToSolrDoc
 
   @@logger = NyplLogFormatter.new('tripple_to_solr_doc.log', level: 'debug')
 
-  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
+  def self.convert!(input_file:, output_file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
     filename_string = db_file_name || "data/nypl/#{authority_code}_#{Time.now.utc.to_i}.db"
     @@gdbm = GDBM.new(filename_string)
 
     statement_count = 0
 
-    File.open(file, 'r').each do |line|
+    File.open(input_file, 'r').each do |line|
       statement_count += 1
       if start_at_line && statement_count < start_at_line
         next
       end
 
       RDF::NTriples::Reader.new(line) do |reader|
-        reader.each_statement do |statement|
-          predicate_string = statement.predicate.to_s
-          @@logger.debug("parsing statement # #{statement_count}") if statement_count % 1000 == 0
-          subject_url = statement.subject.to_s
+        begin
+          reader.each_statement do |statement|
+            predicate_string = statement.predicate.to_s
+            @@logger.debug("parsing statement # #{statement_count}") if statement_count % 1000 == 0
+            subject_url = statement.subject.to_s
 
-            if @@gdbm.has_key?(subject_url)
-              # We've seen this subject before...
-              this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
+              if @@gdbm.has_key?(subject_url)
+                # We've seen this subject before...
+                this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
 
-              if MULTI_PREDICATES.include?(predicate_string)
-                if this_subjects_attributes[predicate_string]
-                  this_subjects_attributes[predicate_string] << statement.object
+                if MULTI_PREDICATES.include?(predicate_string)
+                  if this_subjects_attributes[predicate_string]
+                    this_subjects_attributes[predicate_string] << statement.object
+                  else
+                    # This is the first time we've seen syntax-ns#type
+                    this_subjects_attributes[predicate_string] = [statement.object]
+                  end
                 else
-                  # This is the first time we've seen syntax-ns#type
-                  this_subjects_attributes[predicate_string] = [statement.object]
+                  this_subjects_attributes[predicate_string] = statement.object
                 end
+                @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
               else
-                this_subjects_attributes[predicate_string] = statement.object
+                # We've never seen this subject before
+                if MULTI_PREDICATES.include?(predicate_string)
+                  initial_hash = Marshal.dump(predicate_string => [statement.object])
+                  @@gdbm[subject_url] = initial_hash
+                else
+                  initial_hash = Marshal.dump(predicate_string => statement.object)
+                  @@gdbm[subject_url] = initial_hash
+                end
               end
-              @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
-            else
-              # We've never seen this subject before
-              if MULTI_PREDICATES.include?(predicate_string)
-                initial_hash = Marshal.dump(predicate_string => [statement.object])
-                @@gdbm[subject_url] = initial_hash
-              else
-                initial_hash = Marshal.dump(predicate_string => statement.object)
-                @@gdbm[subject_url] = initial_hash
-              end
-            end
+          end
         end
+      rescue => e 
+        require 'pry'
+        binding.pry
       end
 
       if statement_count % COMPACT_EVERY == 0
@@ -127,7 +132,7 @@ class TrippleToSolrDoc
     end
 
     # solr_docs = []
-    output_json_file = File.new(filename_string.gsub('db', 'json'), 'w')
+    output_json_file = File.new(output_file, 'w')
 
     @@logger.info("writing output as JSON to #{output_json_file.path}")
 

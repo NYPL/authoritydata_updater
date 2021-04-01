@@ -4,8 +4,9 @@ require_relative 'tripple_to_solr_doc'
 class VocabularyParser
   attr_reader :source, :vocabulary, :solr_url
 
-  def initialize(vocabulary: nil, source: nil, solr_url: nil, start_at_line: nil, db_file_name: nil)
+  def initialize(vocabulary: nil, source: nil, output: nil, solr_url: nil, start_at_line: nil, db_file_name: nil)
     @source = source
+    @output = output
     @vocabulary = vocabulary
     @start_at_line = start_at_line
     @db_file_name = db_file_name
@@ -30,7 +31,9 @@ class VocabularyParser
   end
 
   def generate_name_solr_docs(source)
-    solr_docs = TrippleToSolrDoc.convert!(file: source,
+    solr_docs = TrippleToSolrDoc.convert!(
+      input_file: source,
+      output_file: @output,
       term_type: :auto,
       start_at_line: @start_at_line,
       db_file_name: @db_file_name,
@@ -41,7 +44,8 @@ class VocabularyParser
   end
 
   def generate_aat_solr_docs(source)
-    solr_docs = TrippleToSolrDoc.convert!(file: source,
+    solr_docs = TrippleToSolrDoc.convert!(
+      input_file: source,
       term_type: 'concept',
       start_at_line: @start_at_line,
       db_file_name: @db_file_name,
@@ -52,7 +56,8 @@ class VocabularyParser
   end
 
   def generate_genre_and_form_solr_docs(source)
-    solr_docs = TrippleToSolrDoc.convert!(file: source,
+    solr_docs = TrippleToSolrDoc.convert!(
+      input_file: source,
       term_type: 'genreform',
       start_at_line: @start_at_line,
       db_file_name: @db_file_name,
@@ -63,7 +68,8 @@ class VocabularyParser
   end
 
   def generate_subject_solr_docs(source)
-    solr_docs = TrippleToSolrDoc.convert!(file: source,
+    solr_docs = TrippleToSolrDoc.convert!(
+      input_file: source,
       term_type: :auto,
       start_at_line: @start_at_line,
       db_file_name: @db_file_name,
@@ -74,7 +80,8 @@ class VocabularyParser
   end
 
   def generate_graphic_materials_solr_docs(source)
-    solr_docs = TrippleToSolrDoc.convert!(file: source,
+    solr_docs = TrippleToSolrDoc.convert!(
+      input_file: source,
       term_type: 'concept',
       start_at_line: @start_at_line,
       db_file_name: @db_file_name,
