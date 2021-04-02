@@ -3,7 +3,6 @@
 require "digest"
 require "optparse"
 require "rdf"
-require "pry"
 include RDF
 
 # N-Triples files are FULL of statements we don't care about.
