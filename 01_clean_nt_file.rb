@@ -71,7 +71,7 @@ File.open(options[:source], "r") do |input_file|
       next unless match && match[1]
       subject = match[1]
 
-      # determine the bucket for this subject by taking a MD5 hash of the subject,
+      # determine the bucket for this subject by taking a MD5 hash of the subject URI,
       # converting that to an integer, modulo the number of buckets
       bucket = Digest::MD5.hexdigest(subject).to_i(16) % options[:buckets]
 
