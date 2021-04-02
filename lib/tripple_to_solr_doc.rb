@@ -45,42 +45,37 @@ class TrippleToSolrDoc
       end
 
       RDF::NTriples::Reader.new(line) do |reader|
-        begin
-          reader.each_statement do |statement|
-            predicate_string = statement.predicate.to_s
-            @@logger.debug("parsing statement # #{statement_count}") if statement_count % 1000 == 0
-            subject_url = statement.subject.to_s
+        reader.each_statement do |statement|
+          predicate_string = statement.predicate.to_s
+          @@logger.debug("parsing statement # #{statement_count}") if statement_count % 1000 == 0
+          subject_url = statement.subject.to_s
 
-              if @@gdbm.has_key?(subject_url)
-                # We've seen this subject before...
-                this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
+            if @@gdbm.has_key?(subject_url)
+              # We've seen this subject before...
+              this_subjects_attributes = Marshal.load(@@gdbm[subject_url])
 
-                if MULTI_PREDICATES.include?(predicate_string)
-                  if this_subjects_attributes[predicate_string]
-                    this_subjects_attributes[predicate_string] << statement.object
-                  else
-                    # This is the first time we've seen syntax-ns#type
-                    this_subjects_attributes[predicate_string] = [statement.object]
-                  end
+              if MULTI_PREDICATES.include?(predicate_string)
+                if this_subjects_attributes[predicate_string]
+                  this_subjects_attributes[predicate_string] << statement.object
                 else
-                  this_subjects_attributes[predicate_string] = statement.object
+                  # This is the first time we've seen syntax-ns#type
+                  this_subjects_attributes[predicate_string] = [statement.object]
                 end
-                @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
               else
-                # We've never seen this subject before
-                if MULTI_PREDICATES.include?(predicate_string)
-                  initial_hash = Marshal.dump(predicate_string => [statement.object])
-                  @@gdbm[subject_url] = initial_hash
-                else
-                  initial_hash = Marshal.dump(predicate_string => statement.object)
-                  @@gdbm[subject_url] = initial_hash
-                end
+                this_subjects_attributes[predicate_string] = statement.object
               end
-          end
+              @@gdbm[subject_url] = Marshal.dump(this_subjects_attributes)
+            else
+              # We've never seen this subject before
+              if MULTI_PREDICATES.include?(predicate_string)
+                initial_hash = Marshal.dump(predicate_string => [statement.object])
+                @@gdbm[subject_url] = initial_hash
+              else
+                initial_hash = Marshal.dump(predicate_string => statement.object)
+                @@gdbm[subject_url] = initial_hash
+              end
+            end
         end
-      rescue => e 
-        require 'pry'
-        binding.pry
       end
 
       if statement_count % COMPACT_EVERY == 0
