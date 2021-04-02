@@ -77,12 +77,6 @@ File.open(options[:source], "r") do |input_file|
 
       output_files[bucket].write(line)
     end
-
-    # TODO: remove this early stoppage
-    if statements >= 100000
-      puts "stopped processed #{statements} total statements"
-      break
-    end
   end
 end
 
