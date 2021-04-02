@@ -9,7 +9,7 @@ include RDF
 class TrippleToSolrDoc
   # The intermediate, rdbm file can get GIANT with names
   # This strips deprecated subjects every Nth iteration
-  COMPACT_EVERY = 1000000
+  # COMPACT_EVERY = 1000000
 
   # Almost all predicates show up once per Subject, but a subject can have
   # multiple predicates e.g "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -78,9 +78,9 @@ class TrippleToSolrDoc
         end
       end
 
-      if statement_count % COMPACT_EVERY == 0
-        delete_and_compact
-      end
+      # if statement_count % COMPACT_EVERY == 0
+      #   delete_and_compact
+      # end
 
     end
 
