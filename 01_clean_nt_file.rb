@@ -20,6 +20,7 @@ WORTHWHILE_PREDICATES = [
 ].freeze
 
 RDF_SUBJECT_PATTERN = /(.+?)\s/
+BATCH_SIZE = 10000
 
 options = {}
 opt_parser = OptionParser.new do |opts|
@@ -58,14 +59,9 @@ output_files = output_file_names.map do |filename|
 end
 
 
-# puts output_files.inspect
-# puts "Options: #{options}"
-
-
 statements = 0
-batch_size = 10000
 File.open(options[:source], "r") do |input_file|
-  input_file.lazy.each_slice(batch_size) do |lines|
+  input_file.lazy.each_slice(BATCH_SIZE) do |lines|
     statements += lines.size
     puts "Processing line #{statements}..."
 
