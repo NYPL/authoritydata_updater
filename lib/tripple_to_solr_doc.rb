@@ -9,7 +9,7 @@ include RDF
 class TrippleToSolrDoc
   # The intermediate, rdbm file can get GIANT with names
   # This strips deprecated subjects every Nth iteration
-  COMPACT_EVERY = 1000000
+  COMPACT_EVERY = 10000
 
   # Almost all predicates show up once per Subject, but a subject can have
   # multiple predicates e.g "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -30,15 +30,15 @@ class TrippleToSolrDoc
 
   LOC_URI_REGEX = /https?:\/\/.*\.loc.gov/
 
-  @@logger = NyplLogFormatter.new('tripple_to_solr_doc.log', level: 'debug')
+  @@logger = NyplLogFormatter.new(STDOUT, level: 'debug')
 
-  def self.convert!(file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
+  def self.convert!(input_file:, output_file:, term_type:, authority_code:, authority_name:, unique_id_prefix:, start_at_line:, db_file_name:)
     filename_string = db_file_name || "data/nypl/#{authority_code}_#{Time.now.utc.to_i}.db"
     @@gdbm = GDBM.new(filename_string)
 
     statement_count = 0
 
-    File.open(file, 'r').each do |line|
+    File.open(input_file, 'r').each do |line|
       statement_count += 1
       if start_at_line && statement_count < start_at_line
         next
@@ -127,7 +127,7 @@ class TrippleToSolrDoc
     end
 
     # solr_docs = []
-    output_json_file = File.new(filename_string.gsub('db', 'json'), 'w')
+    output_json_file = File.new(output_file, 'w')
 
     @@logger.info("writing output as JSON to #{output_json_file.path}")
 

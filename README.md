@@ -44,7 +44,7 @@ This makes the subsuquent input files MUCH easier to deal with.
 This removes inconsequential statements/rows from `authoritiessubjects.nt.madsrdf`,
 and outputs a new file named `cleaner-subjects.nt`.
 
-    $ ruby 01_clean_nt_file.rb authoritiessubjects.nt.madsrdf cleaner-subjects.nt
+    $ ruby 01_clean_nt_file.rb --source authoritiessubjects.nt.madsrdf --output cleaner-subjects.nt
 
 ### Step 2: Convert Statements in `.nt` file to JSON
 
