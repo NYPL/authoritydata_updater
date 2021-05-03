@@ -12,5 +12,11 @@
 
 ## Names Authority File
 * ruby rdf_bucketer.rb -s data/source/lcnaf.madsrdf.nt -b 8
-* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt -v naf -o data/output/naf.json
- 
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.1 -v naf -o data/output/naf.1.json
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.2 -v naf -o data/output/naf.2.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.3 -v naf -o data/output/naf.3.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.4 -v naf -o data/output/naf.4.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.5 -v naf -o data/output/naf.5.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.6 -v naf -o data/output/naf.6.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.7 -v naf -o data/output/naf.7.json -r false
+* ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt.8 -v naf -o data/output/naf.8.json -r false

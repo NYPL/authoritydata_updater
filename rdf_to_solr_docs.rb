@@ -89,7 +89,7 @@ parser = OptionParser.new do |opts|
   opts.on("-s", "--source [SOURCE]", String, "Path or URL to vocabulary file")
   opts.on("-v", "--vocabulary [VOCABULARY]", String, "Vocabulary type")
   opts.on("-o", "--output [OUTPUT]", String, "Output file (optional)")
-  opts.on("-d", "--database [DATABASE]", String, "Database file (optional)")
+  opts.on("-r", "--[no-]reset [RESET]", TrueClass, "Reset memcache (default: TRUE)")
 end
 
 options = {}
@@ -122,11 +122,7 @@ if options[:output] !~ REGEX_NOT_BLANK
   options[:output] = File.join(source_dir, "#{source_file_no_ext}.json")
 end
 
-if options[:database] !~ REGEX_NOT_BLANK
-  output_dir = File.dirname(options[:output])
-  output_file_no_ext = File.basename(options[:output], File.extname(options[:output]))
-  options[:database] = File.join(output_dir, "#{output_file_no_ext}_#{Time.now.utc.to_i}.db")
-end
+options[:reset] = options[:reset].nil? ? true : !!options[:reset]
 
 def parse_value(value)
   if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
@@ -146,12 +142,16 @@ print "\tcounting lines... "
 total_lines = %x{wc -l #{options[:source]}}.split.first.to_i
 puts total_lines
 puts "Output: #{options[:output]}"
-puts "Database: #{options[:database]}"
 
 all_subjects = Set.new
 
 cache = Dalli::Client.new('localhost:11211', {})
-cache.flush_all
+
+options[:reset] = options[:reset].nil? ? true : !!options[:reset]
+if options[:reset]
+  puts "Flushing memcached"
+  cache.flush_all
+end
 
 puts "\nParsing source file..."
 bar = ProgressBar.new(total_lines)
