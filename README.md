@@ -11,5 +11,6 @@
 * ruby rdf_to_solr_docs.rb -s data/source/AATOut_full.nt -v aat -o data/output/aat.json
 
 ## Names Authority File
+* ruby rdf_bucketer.rb -s data/source/lcnaf.madsrdf.nt -b 8
 * ruby rdf_to_solr_docs.rb -s data/source/lcnaf.madsrdf.nt -v naf -o data/output/naf.json
  
