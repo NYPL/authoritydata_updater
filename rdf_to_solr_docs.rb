@@ -223,6 +223,7 @@ begin
       next if subject.start_with?("_") # bnode
   
       predicate_to_object_mapping = cache.get(subject)
+      next unless predicate_to_object_mapping
   
       status = "unknown"
       metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
