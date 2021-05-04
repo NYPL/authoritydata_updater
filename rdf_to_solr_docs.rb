@@ -2,7 +2,7 @@
 
 require "optparse"
 require "pry"
-require "progress_bar"
+require "tty-progressbar"
 require "json"
 require "dalli"
 require "set"
@@ -87,7 +87,7 @@ parser = OptionParser.new do |opts|
   opts.on("-s", "--source [SOURCE]", String, "Path or URL to vocabulary file")
   opts.on("-v", "--vocabulary [VOCABULARY]", String, "Vocabulary type")
   opts.on("-o", "--output [OUTPUT]", String, "Output file (optional)")
-  opts.on("-r", "--[no-]reset [RESET]", TrueClass, "Reset memcache (default: TRUE)")
+  opts.on("-t", "--threads [THREADS]", Integer, "Number of threads (default: 2)")
 end
 
 options = {}
@@ -120,7 +120,15 @@ if options[:output] !~ REGEX_NOT_BLANK
   options[:output] = File.join(source_dir, "#{source_file_no_ext}.json")
 end
 
-options[:reset] = options[:reset].nil? ? true : !!options[:reset]
+options[:threads] ||= 2
+
+# create temp files for each thread and immediately unlink them
+# https://ruby-doc.org/stdlib-2.7.3/libdoc/tempfile/rdoc/Tempfile.html#method-i-unlink-label-Unlink-before-close
+tempfiles = options[:threads].times.map do |thread_number|
+  file = Tempfile.new
+  file.unlink
+  file
+end
 
 def parse_value(value)
   if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
@@ -130,16 +138,61 @@ def parse_value(value)
   elsif match = value.match(REGEX_LITERAL)
     return match[:value]
   else
-    binding.pry
+    raise "Unable to parse RDF value: #{value}"
   end
 end
 
-puts "Vocabulary: #{options[:vocabulary]}"
-puts "Source: #{options[:source]}"
-print "\tcounting lines... "
-total_lines = %x{wc -l #{options[:source]}}.split.first.to_i
-puts total_lines
-puts "Output: #{options[:output]}"
+begin
+  puts "Vocabulary: #{options[:vocabulary]}"
+  puts "Source: #{options[:source]}"
+  print "\tcounting lines... "
+  total_lines = %x{wc -l #{options[:source]}}.split.first.to_i
+  puts total_lines
+  puts "Output: #{options[:output]}"
+
+  puts "\nSplitting input file into #{tempfiles.size} temp file buckets..."
+  bucket_progress = TTY::ProgressBar.new("[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]", total: total_lines, frequency: 10)
+
+  File.open(options[:source], "r").each do |line|
+    if matches = line.match(REGEX_RDF_TRIPPLES)
+      bucket = Digest::MD5.hexdigest(matches[:subject]).to_i(16) % tempfiles.count
+      tempfiles[bucket] << line
+    end
+
+    bucket_progress.advance
+  end
+
+  threads = []
+  bars = []
+  options[:threads].times do |bucket|
+    tempfile = tempfiles[bucket]
+    tempfile.rewind
+
+    bucket_lines = tempfile.each.count
+    tempfile.rewind
+
+    bars[bucket] = ProgressBar.new(bucket_lines)
+
+    threads[bucket] = Thread.new do
+      tempfile.each do |line|
+        sleep(rand(0)/100.0)
+        bars[bucket].increment!
+      end
+    end
+  end
+
+  threads.each do |thread|
+    thread.join
+  end
+
+ensure
+  #binding.pry
+  tempfiles.each { |f| f.close! }
+end
+
+puts "early exit"
+exit
+
 
 all_subjects = Set.new
 
