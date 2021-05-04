@@ -186,7 +186,25 @@ begin
 
     threads[bucket] = Thread.new do
       tempfile.each do |line|
-        cache.set("foo", "bar")
+        if matches = line.match(REGEX_RDF_TRIPPLES)
+          if ALL_PREDICATES.include?(matches[:predicate])
+            subject = parse_value(matches[:subject])
+            subject_values = cache.get(subject) || {}
+            predicate = parse_value(matches[:predicate])
+            object = parse_value(matches[:object])
+
+            if SINGULAR_PREDICATES.include?(predicate)
+              subject_values[predicate] = object
+            else
+              subject_values[predicate] ||= Set.new
+              subject_values[predicate] << object
+            end
+
+            all_subjects << subject
+            cache.set(subject, subject_values)
+          end
+        end
+
         thread_progress_bars[bucket].advance
       end
     end
