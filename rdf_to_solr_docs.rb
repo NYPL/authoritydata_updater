@@ -7,8 +7,6 @@ require "json"
 require "dalli"
 require "set"
 
-READ_FILE_BATCH_SIZE = 2000
-
 REGEX_RDF_TRIPPLES = /^(?<subject>.+?) <(?<predicate>.+?)> (?<object>.+?) \.$/  # matches each line in an RDF tripples file
 REGEX_LITERAL_WITH_LANGUAGE = /^\"(?<value>.+)\"@(?<language>.\w+)$/            # e.g. "Abstract films"@en
 REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/                                         # literal without a language tag
@@ -145,7 +143,7 @@ puts "Output: #{options[:output]}"
 
 all_subjects = Set.new
 
-cache = Dalli::Client.new('localhost:11211', {})
+cache = Dalli::Client.new("localhost:11211", {})
 
 options[:reset] = options[:reset].nil? ? true : !!options[:reset]
 if options[:reset]
@@ -156,36 +154,32 @@ end
 puts "\nParsing source file..."
 bar = ProgressBar.new(total_lines)
 
-File.open(options[:source], "r") do |file|
-  file.lazy.each_slice(READ_FILE_BATCH_SIZE) do |batch|
-    batch.each do |line|
-      if matches = line.match(REGEX_RDF_TRIPPLES)
-        next unless ALL_PREDICATES.include?(matches[:predicate])
+File.open(options[:source], "r").each do |line|
+  if matches = line.match(REGEX_RDF_TRIPPLES)
+    next unless ALL_PREDICATES.include?(matches[:predicate])
 
-        subject = parse_value(matches[:subject])
-        subject_values = cache.get(subject) || {}
-        predicate = parse_value(matches[:predicate])
-        object = parse_value(matches[:object])
+    subject = parse_value(matches[:subject])
+    subject_values = cache.get(subject) || {}
+    predicate = parse_value(matches[:predicate])
+    object = parse_value(matches[:object])
 
-        if SINGULAR_PREDICATES.include?(predicate)
-          next if subject_values.has_key?(predicate)
-          subject_values[predicate] = object
-        else
-          if subject_values.has_key?(predicate)
-            next if subject_values[predicate].include?(object)
-            subject_values[predicate] << object
-          else
-            subject_values[predicate] = [object]
-          end
-        end
-
-        all_subjects << subject
-        cache.set(subject, subject_values)
+    if SINGULAR_PREDICATES.include?(predicate)
+      next if subject_values.has_key?(predicate)
+      subject_values[predicate] = object
+    else
+      if subject_values.has_key?(predicate)
+        next if subject_values[predicate].include?(object)
+        subject_values[predicate] << object
+      else
+        subject_values[predicate] = [object]
       end
     end
 
-    bar.increment!(batch.size)
+    all_subjects << subject
+    cache.set(subject, subject_values)
   end
+
+  bar.increment!
 end
 
 deprecated_count = 0

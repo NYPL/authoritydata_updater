@@ -10,8 +10,6 @@ REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/                                         
 REGEX_IRI = /^<(?<value>.+)>$/                                                  # e.g. <http://id.loc.gov/authorities/genreForms/gf2011026043>
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
 
-READ_FILE_BATCH_SIZE = 10000
-
 options = {}
 opt_parser = OptionParser.new do |opts|
   opts.on("-s", "--source [SOURCE]", String, "Path to source file")
@@ -47,17 +45,13 @@ total_lines = %x{wc -l #{options[:source]}}.split.first.to_i
 puts total_lines
 bar = ProgressBar.new(total_lines)
 
-File.open(options[:source], "r") do |file|
-  file.lazy.each_slice(READ_FILE_BATCH_SIZE) do |batch|
-    batch.each do |line|
-      if matches = line.match(REGEX_RDF_TRIPPLES)
-        bucket = Digest::MD5.hexdigest(matches[:subject]).to_i(16) % options[:buckets]
-        output_files[bucket].write(line)
-      end
-    end
-
-    bar.increment!(batch.size)
+File.open(options[:source], "r").each do |line|
+  if matches = line.match(REGEX_RDF_TRIPPLES)
+    bucket = Digest::MD5.hexdigest(matches[:subject]).to_i(16) % options[:buckets]
+    output_files[bucket].write(line)
   end
+
+  bar.increment!
 end
 
 output_files.each do |file|
