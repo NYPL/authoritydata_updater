@@ -214,8 +214,11 @@ begin
 
   puts "\nGenerating solr docs..."
 
+  docs_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: all_subjects.count, frequency: PROGRESS_BAR_FREQUENCY)
+  docs_generated = 0
+
   File.open(options[:output], "w") do |outfile|
-    all_subjects.each do |subject|
+    docs_progress.iterate(all_subjects) do |subject|
       next if subject.start_with?("_") # bnode
   
       predicate_to_object_mapping = cache.get(subject)
@@ -273,10 +276,11 @@ begin
       }
   
       outfile.puts(doc.to_json)
+      docs_generated += 1
     end
   end
   
-  puts "Done."
+  puts "\n\nGenerated #{docs_generated} Solr documents."
 ensure
   tempfiles.each { |f| f.close! }
 end
