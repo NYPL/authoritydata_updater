@@ -13,6 +13,9 @@ REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/                                         
 REGEX_IRI = /^<(?<value>.+)>$/                                                  # e.g. <http://id.loc.gov/authorities/genreForms/gf2011026043>
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
 
+PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
+PROGRESS_BAR_FREQUENCY = 10 # updates per second
+
 LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
 LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
 LOC_RECORD_STATUS = "http://id.loc.gov/ontologies/RecordInfo#recordStatus"
@@ -151,7 +154,7 @@ begin
   puts "Output: #{options[:output]}"
 
   puts "\nSplitting input file into #{tempfiles.size} temp file buckets..."
-  bucket_progress = TTY::ProgressBar.new("[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]", total: total_lines, frequency: 10)
+  bucket_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: total_lines, frequency: PROGRESS_BAR_FREQUENCY)
 
   File.open(options[:source], "r").each do |line|
     if matches = line.match(REGEX_RDF_TRIPPLES)
@@ -162,8 +165,16 @@ begin
     bucket_progress.advance
   end
 
+  puts "\nProcessing each bucket into memcached..."
+
+  cache = Dalli::Client.new("localhost:11211", {})
+  cache.flush_all
+
+  all_subjects = Set.new
   threads = []
-  bars = []
+  main_progress_bar = TTY::ProgressBar::Multi.new("total progress #{PROGRESS_BAR_FORMAT}", frequency: PROGRESS_BAR_FREQUENCY)
+  thread_progress_bars = []
+
   options[:threads].times do |bucket|
     tempfile = tempfiles[bucket]
     tempfile.rewind
@@ -171,12 +182,12 @@ begin
     bucket_lines = tempfile.each.count
     tempfile.rewind
 
-    bars[bucket] = ProgressBar.new(bucket_lines)
+    thread_progress_bars[bucket] = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines, frequency: PROGRESS_BAR_FREQUENCY)
 
     threads[bucket] = Thread.new do
       tempfile.each do |line|
-        sleep(rand(0)/100.0)
-        bars[bucket].increment!
+        cache.set("foo", "bar")
+        thread_progress_bars[bucket].advance
       end
     end
   end
@@ -184,7 +195,6 @@ begin
   threads.each do |thread|
     thread.join
   end
-
 ensure
   #binding.pry
   tempfiles.each { |f| f.close! }
@@ -192,7 +202,6 @@ end
 
 puts "early exit"
 exit
-
 
 all_subjects = Set.new
 
