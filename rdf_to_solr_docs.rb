@@ -210,125 +210,73 @@ begin
     end
   end
 
-  threads.each do |thread|
-    thread.join
-  end
-ensure
-  #binding.pry
-  tempfiles.each { |f| f.close! }
-end
+  threads.each { |t| t.join }
 
-puts "early exit"
-exit
+  puts "\nGenerating solr docs..."
 
-all_subjects = Set.new
-
-cache = Dalli::Client.new("localhost:11211", {})
-
-options[:reset] = options[:reset].nil? ? true : !!options[:reset]
-if options[:reset]
-  puts "Flushing memcached"
-  cache.flush_all
-end
-
-puts "\nParsing source file..."
-bar = ProgressBar.new(total_lines)
-
-File.open(options[:source], "r").each do |line|
-  if matches = line.match(REGEX_RDF_TRIPPLES)
-    next unless ALL_PREDICATES.include?(matches[:predicate])
-
-    subject = parse_value(matches[:subject])
-    subject_values = cache.get(subject) || {}
-    predicate = parse_value(matches[:predicate])
-    object = parse_value(matches[:object])
-
-    if SINGULAR_PREDICATES.include?(predicate)
-      next if subject_values.has_key?(predicate)
-      subject_values[predicate] = object
-    else
-      if subject_values.has_key?(predicate)
-        next if subject_values[predicate].include?(object)
-        subject_values[predicate] << object
-      else
-        subject_values[predicate] = [object]
+  File.open(options[:output], "w") do |outfile|
+    all_subjects.each do |subject|
+      next if subject.start_with?("_") # bnode
+  
+      predicate_to_object_mapping = cache.get(subject)
+  
+      status = "unknown"
+      metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
+      if metadata_node_name
+        metadata_node = cache.get(metadata_node_name) || {}
+        status = metadata_node[LOC_RECORD_STATUS]
       end
-    end
-
-    all_subjects << subject
-    cache.set(subject, subject_values)
-  end
-
-  bar.increment!
-end
-
-deprecated_count = 0
-
-puts "\n\nGenerating solr docs..."
-
-File.open(options[:output], "w") do |outfile|
-  all_subjects.each do |subject|
-    next if subject.start_with?("_") # bnode
-
-    predicate_to_object_mapping = cache.get(subject)
-
-    status = "unknown"
-    metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
-    if metadata_node_name
-      metadata_node = cache.get(metadata_node_name) || {}
-      status = metadata_node[LOC_RECORD_STATUS]
-    end
-
-    if status == "deprecated"
-      deprecated_count += 1
-      next
-    end
-
-    term = nil
-
-    TERM_LABELS.each do |term_label|
-      if predicate_to_object_mapping.include?(term_label)
-        term = predicate_to_object_mapping[term_label]
-        break
+  
+      next if status == "deprecated"
+  
+      term = nil
+  
+      TERM_LABELS.each do |term_label|
+        if predicate_to_object_mapping.include?(term_label)
+          term = predicate_to_object_mapping[term_label]
+          break
+        end
       end
-    end
-
-    next unless term
-
-    term_type = vocabulary["term_type"]
-    if !term_type
-      # this vocabulary does not have a set term type, look it up for this document
-      document_types = predicate_to_object_mapping[W3_TYPE]
-      if document_types
-        TERM_TYPE_MAPPING.each do |term_type_iri, value|
-          if document_types.include?(term_type_iri)
-            term_type = value
-            break
+  
+      next unless term
+  
+      term_type = vocabulary["term_type"]
+      if !term_type
+        # this vocabulary does not have a set term type, look it up for this document
+        document_types = predicate_to_object_mapping[W3_TYPE]
+        if document_types
+          TERM_TYPE_MAPPING.each do |term_type_iri, value|
+            if document_types.include?(term_type_iri)
+              term_type = value
+              break
+            end
           end
         end
       end
+  
+      next unless term_type
+  
+      record_id = File.basename(subject)
+  
+      doc = {
+        uri: subject,
+        term: term,
+        term_idx: term,
+        term_type: term_type,
+        record_id: File.basename(subject),
+        language: "en",
+        authority_code: options[:vocabulary].to_s,
+        authority_name: vocabulary[:authority_name],
+        unique_id: "#{options[:vocabulary]}_#{record_id}",
+        alternate_term: predicate_to_object_mapping[W3_ALT_LABEL],
+        alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL],
+      }
+  
+      outfile.puts(doc.to_json)
     end
-
-    next unless term_type
-
-    record_id = File.basename(subject)
-
-    doc = {
-      uri: subject,
-      term: term,
-      term_idx: term,
-      term_type: term_type,
-      record_id: File.basename(subject),
-      language: "en",
-      authority_code: options[:vocabulary].to_s,
-      authority_name: vocabulary[:authority_name],
-      unique_id: "#{options[:vocabulary]}_#{record_id}",
-      alternate_term: predicate_to_object_mapping[W3_ALT_LABEL],
-      alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL],
-    }
-
-    outfile.puts(doc.to_json)
   end
+  
+  puts "Done."
+ensure
+  tempfiles.each { |f| f.close! }
 end
-
-puts "Done."
