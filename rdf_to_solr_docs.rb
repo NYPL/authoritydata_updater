@@ -185,11 +185,12 @@ begin
     thread_progress_bars[bucket] = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines, frequency: PROGRESS_BAR_FREQUENCY)
 
     threads[bucket] = Thread.new do
+      Thread.current["cache"] = Dalli::Client.new("localhost:11211", {})
       tempfile.each do |line|
         if matches = line.match(REGEX_RDF_TRIPPLES)
           if ALL_PREDICATES.include?(matches[:predicate])
             subject = parse_value(matches[:subject])
-            subject_values = cache.get(subject) || {}
+            subject_values = Thread.current["cache"].get(subject) || {}
             predicate = parse_value(matches[:predicate])
             object = parse_value(matches[:object])
 
@@ -201,7 +202,7 @@ begin
             end
 
             all_subjects << subject
-            cache.set(subject, subject_values)
+            Thread.current["cache"].set(subject, subject_values)
           end
         end
 
