@@ -14,7 +14,7 @@ REGEX_IRI = /^<(?<value>.+)>$/                                                  
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
-PROGRESS_BAR_FREQUENCY = 5 # updates per second
+PROGRESS_BAR_UPDATE_FREQUENCY = 1000
 
 LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
 LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
@@ -154,16 +154,19 @@ begin
   puts "Output: #{options[:output]}"
 
   puts "\nSplitting input file into #{tempfiles.size} temp file buckets..."
-  bucket_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: total_lines, frequency: PROGRESS_BAR_FREQUENCY)
+  split_lines = 0
+  bucket_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: total_lines)
 
   File.open(options[:source], "r").each do |line|
     if matches = line.match(REGEX_RDF_TRIPPLES)
       bucket = Digest::MD5.hexdigest(matches[:subject]).to_i(16) % tempfiles.count
       tempfiles[bucket] << line
+      split_lines += 1
+      bucket_progress.advance(PROGRESS_BAR_UPDATE_FREQUENCY) if split_lines % PROGRESS_BAR_UPDATE_FREQUENCY == 0
     end
-
-    bucket_progress.advance
   end
+
+  bucket_progress.finish
 
   puts "\nProcessing each bucket into memcached..."
 
@@ -172,8 +175,7 @@ begin
 
   all_subjects = Set.new
   threads = []
-  main_progress_bar = TTY::ProgressBar::Multi.new("total progress #{PROGRESS_BAR_FORMAT}", frequency: PROGRESS_BAR_FREQUENCY)
-  thread_progress_bars = []
+  main_progress_bar = TTY::ProgressBar::Multi.new("total progress #{PROGRESS_BAR_FORMAT}")
 
   options[:threads].times do |bucket|
     tempfile = tempfiles[bucket]
@@ -182,15 +184,15 @@ begin
     bucket_lines = tempfile.each.count
     tempfile.rewind
 
-    thread_progress_bars[bucket] = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines, frequency: PROGRESS_BAR_FREQUENCY)
-
     threads[bucket] = Thread.new do
-      Thread.current["cache"] = Dalli::Client.new("localhost:11211", {})
+      thread_progress_bar = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines)
+      thread_cache = Dalli::Client.new("localhost:11211", {})
+      linecount = 0
       tempfile.each do |line|
         if matches = line.match(REGEX_RDF_TRIPPLES)
           if ALL_PREDICATES.include?(matches[:predicate])
             subject = parse_value(matches[:subject])
-            subject_values = Thread.current["cache"].get(subject) || {}
+            subject_values = thread_cache.get(subject) || {}
             predicate = parse_value(matches[:predicate])
             object = parse_value(matches[:object])
 
@@ -202,12 +204,15 @@ begin
             end
 
             all_subjects << subject
-            Thread.current["cache"].set(subject, subject_values)
+            thread_cache.set(subject, subject_values)
           end
         end
 
-        thread_progress_bars[bucket].advance
+        linecount += 1
+        thread_progress_bar.advance(PROGRESS_BAR_UPDATE_FREQUENCY) if linecount % PROGRESS_BAR_UPDATE_FREQUENCY == 0
       end
+
+      thread_progress_bar.finish
     end
   end
 
