@@ -9,6 +9,7 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
     redis (4.2.5)
+    ruby-prof (1.4.3)
     rufo (0.12.0)
     strings-ansi (0.2.0)
     tty-cursor (0.7.1)
@@ -28,6 +29,7 @@ DEPENDENCIES
   gdbm
   pry
   redis
+  ruby-prof
   rufo
   tty-progressbar
 
