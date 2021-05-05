@@ -14,7 +14,7 @@ REGEX_IRI = /^<(?<value>.+)>$/                                                  
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
-PROGRESS_BAR_UPDATE_FREQUENCY = 1000
+PROGRESS_BAR_UPDATE_FREQUENCY = 10000
 
 LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
 LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
