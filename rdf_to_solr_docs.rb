@@ -14,7 +14,8 @@ REGEX_IRI = /^<(?<value>.+)>$/                                                  
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
-PROGRESS_BAR_UPDATE_FREQUENCY = 10000
+PROGRESS_BAR_FREQUENCY = 5 # updates per second
+PROGRESS_BAR_UPDATE_DOC_COUNT = 1000
 
 LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
 LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
@@ -155,14 +156,14 @@ begin
 
   puts "\nSplitting input file into #{tempfiles.size} temp file buckets..."
   split_lines = 0
-  bucket_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: total_lines)
+  bucket_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: total_lines, frequency: PROGRESS_BAR_FREQUENCY)
 
   File.open(options[:source], "r").each do |line|
     if matches = line.match(REGEX_RDF_TRIPPLES)
       bucket = Digest::MD5.hexdigest(matches[:subject]).to_i(16) % tempfiles.count
       tempfiles[bucket] << line
       split_lines += 1
-      bucket_progress.advance(PROGRESS_BAR_UPDATE_FREQUENCY) if split_lines % PROGRESS_BAR_UPDATE_FREQUENCY == 0
+      bucket_progress.advance(PROGRESS_BAR_UPDATE_DOC_COUNT) if split_lines % PROGRESS_BAR_UPDATE_DOC_COUNT == 0
     end
   end
 
@@ -175,7 +176,7 @@ begin
 
   all_subjects = Set.new
   threads = []
-  main_progress_bar = TTY::ProgressBar::Multi.new("total progress #{PROGRESS_BAR_FORMAT}")
+  main_progress_bar = TTY::ProgressBar::Multi.new("total progress #{PROGRESS_BAR_FORMAT}", frequency: PROGRESS_BAR_FREQUENCY)
 
   options[:threads].times do |bucket|
     tempfile = tempfiles[bucket]
@@ -185,7 +186,7 @@ begin
     tempfile.rewind
 
     threads[bucket] = Thread.new do
-      thread_progress_bar = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines)
+      thread_progress_bar = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines, frequency: PROGRESS_BAR_FREQUENCY)
       thread_cache = Dalli::Client.new("localhost:11211", {})
       linecount = 0
       tempfile.each do |line|
@@ -209,7 +210,7 @@ begin
         end
 
         linecount += 1
-        thread_progress_bar.advance(PROGRESS_BAR_UPDATE_FREQUENCY) if linecount % PROGRESS_BAR_UPDATE_FREQUENCY == 0
+        thread_progress_bar.advance(PROGRESS_BAR_UPDATE_DOC_COUNT) if linecount % PROGRESS_BAR_UPDATE_DOC_COUNT == 0
       end
 
       thread_progress_bar.finish
