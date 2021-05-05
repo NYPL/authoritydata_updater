@@ -8,7 +8,6 @@ git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 gem "redis"
 gem "pry"
 gem "rufo"
-gem "gdbm"
 gem "tty-progressbar"
 gem "dalli"
 gem "ruby-prof"
