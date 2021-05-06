@@ -225,6 +225,8 @@ begin
   docs_progress = TTY::ProgressBar.new("#{PROGRESS_BAR_FORMAT}", total: all_subjects.count, frequency: PROGRESS_BAR_FREQUENCY)
   docs_generated = 0
 
+  authority_code = options[:vocabulary].to_s
+
   File.open(options[:output], "w") do |outfile|
     docs_progress.iterate(all_subjects) do |subject|
       next if subject.start_with?("_") # bnode
@@ -232,8 +234,6 @@ begin
 
       predicate_to_object_mapping = cache.get(subject)
       next unless predicate_to_object_mapping
-
-      authority_code = options[:vocabulary].to_s
 
       status = "unknown"
       metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
