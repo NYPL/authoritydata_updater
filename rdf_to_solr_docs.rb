@@ -328,6 +328,9 @@ begin
         alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL],
       }
 
+      binding.pry
+      exit
+
       outfile.puts(doc.to_json)
       docs_generated += 1
     end
