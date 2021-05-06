@@ -285,13 +285,13 @@ begin
         skipped_no_term += 1
         if first_no_term
           first_no_term = false
-          binding.pry
+          #binding.pry
         end
 
         next
       end
 
-      term_type = vocabulary["term_type"]
+      term_type = vocabulary[:term_type]
       if !term_type
         # this vocabulary does not have a set term type, look it up for this document
         document_types = predicate_to_object_mapping[W3_TYPE]
@@ -310,7 +310,7 @@ begin
         skipped_no_term_type += 1
         if first_no_type
           first_no_type = false
-          binding.pry
+          #binding.pry
         end
         next
       end
