@@ -27,14 +27,6 @@ W3_PREF_LABEL = "http://www.w3.org/2004/02/skos/core#prefLabel"
 W3_ALT_LABEL = "http://www.w3.org/2004/02/skos/core#altLabel"
 W3_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
-# labels used to identify terms vary by vocabulary,
-# look them up in this order
-TERM_LABELS = [
-  LOC_AUTHORITATIVE_LABEL,
-  W3_PREF_LABEL,
-  W3_RDF_LABEL,
-].freeze
-
 # predicates that occur a single time per subject
 SINGULAR_PREDICATES = [
   LOC_ADMIN_METADATA,
@@ -272,15 +264,14 @@ begin
       end
 
       term = nil
-
-      TERM_LABELS.each do |term_label|
-        if predicate_to_object_mapping.include?(term_label)
-          term = predicate_to_object_mapping[term_label]
-          break
-        end
+      if predicate_to_object_mapping.include?(LOC_AUTHORITATIVE_LABEL)
+        term = predicate_to_object_mapping[LOC_AUTHORITATIVE_LABEL]
+      elsif predicate_to_object_mapping.include?(W3_PREF_LABEL)
+        term = predicate_to_object_mapping[W3_PREF_LABEL].first
+      elsif predicate_to_object_mapping.include?(W3_RDF_LABEL)
+        term = predicate_to_object_mapping[W3_RDF_LABEL]
       end
 
-      #next
       unless term
         skipped_no_term += 1
         if first_no_term
