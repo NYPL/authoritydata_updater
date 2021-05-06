@@ -12,6 +12,7 @@ REGEX_LITERAL_WITH_LANGUAGE = /^\"(?<value>.+)\"@(?<language>.\w+)$/            
 REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/                                         # literal without a language tag
 REGEX_IRI = /^<(?<value>.+)>$/                                                  # e.g. <http://id.loc.gov/authorities/genreForms/gf2011026043>
 REGEX_NOT_BLANK = /[^[:space:]]/                                                # equivalent to !ActiveSupport.blank?
+REGEX_LOC_URI = /^https?:\/\/.*\.loc.gov/
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
 PROGRESS_BAR_FREQUENCY = 5 # updates per second
@@ -227,10 +228,13 @@ begin
   File.open(options[:output], "w") do |outfile|
     docs_progress.iterate(all_subjects) do |subject|
       next if subject.start_with?("_") # bnode
+      next if authority_code == 'lcsh' && !(subject =~ REGEX_LOC_URI)
   
       predicate_to_object_mapping = cache.get(subject)
       next unless predicate_to_object_mapping
   
+      authority_code = options[:vocabulary].to_s
+
       status = "unknown"
       metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
       if metadata_node_name
@@ -266,6 +270,7 @@ begin
       end
   
       next unless term_type
+      next if authority_code == 'lcsh' && term_type == 'complex_subject'
   
       record_id = File.basename(subject)
   
@@ -276,7 +281,7 @@ begin
         term_type: term_type,
         record_id: File.basename(subject),
         language: "en",
-        authority_code: options[:vocabulary].to_s,
+        authority_code: authority_code,
         authority_name: vocabulary[:authority_name],
         unique_id: "#{options[:vocabulary]}_#{record_id}",
         alternate_term: predicate_to_object_mapping[W3_ALT_LABEL],
