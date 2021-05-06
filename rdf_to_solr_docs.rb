@@ -324,8 +324,8 @@ begin
         authority_code: authority_code,
         authority_name: vocabulary[:authority_name],
         unique_id: "#{options[:vocabulary]}_#{record_id}",
-        alternate_term: predicate_to_object_mapping[W3_ALT_LABEL],
-        alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL],
+        alternate_term: predicate_to_object_mapping[W3_ALT_LABEL]&.to_a,
+        alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL]&.to_a,
       }
 
       binding.pry
