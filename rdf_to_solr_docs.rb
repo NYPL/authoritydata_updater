@@ -227,13 +227,34 @@ begin
 
   authority_code = options[:vocabulary].to_s
 
+  skipped_bnode = 0
+  skipped_non_loc_uri = 0
+  skipped_no_mapping = 0
+  skipped_deprecated = 0
+  skipped_no_term = 0
+  skipped_no_term_type = 0
+  skipped_complex_subject = 0
+
   File.open(options[:output], "w") do |outfile|
     docs_progress.iterate(all_subjects) do |subject|
-      next if subject.start_with?("_") # bnode
-      next if authority_code == "lcsh" && !(subject =~ REGEX_LOC_URI)
+      #next if subject.start_with?("_") # bnode
+      if subject.start_with?("_") # bnode
+        skipped_bnode += 1
+        next
+      end
+
+      #next if authority_code == "lcsh" && !(subject =~ REGEX_LOC_URI)
+      if authority_code == "lcsh" && !(subject =~ REGEX_LOC_URI)
+        skipped_non_loc_uri += 1
+        next
+      end
 
       predicate_to_object_mapping = cache.get(subject)
-      next unless predicate_to_object_mapping
+      #next unless predicate_to_object_mapping
+      unless predicate_to_object_mapping
+        skipped_no_mapping += 1
+        next
+      end
 
       status = "unknown"
       metadata_node_name = predicate_to_object_mapping[LOC_ADMIN_METADATA]
@@ -242,7 +263,11 @@ begin
         status = metadata_node[LOC_RECORD_STATUS]
       end
 
-      next if status == "deprecated"
+      #next if status == "deprecated"
+      if status == "deprecated"
+        skipped_deprecated += 1
+        next
+      end
 
       term = nil
 
@@ -253,7 +278,11 @@ begin
         end
       end
 
-      next unless term
+      #next
+      unless term
+        skipped_no_term += 1
+        next
+      end
 
       term_type = vocabulary["term_type"]
       if !term_type
@@ -269,8 +298,17 @@ begin
         end
       end
 
-      next unless term_type
-      next if authority_code == "lcsh" && term_type == "complex_subject"
+      #next unless term_type
+      unless term_type
+        skipped_no_term_type += 1
+        next
+      end
+
+      #next if authority_code == "lcsh" && term_type == "complex_subject"
+      if authority_code == "lcsh" && term_type == "complex_subject"
+        skipped_complex_subject += 1
+        next
+      end
 
       record_id = File.basename(subject)
 
@@ -294,6 +332,14 @@ begin
   end
 
   puts "\n\nGenerated #{docs_generated} Solr documents."
+
+  puts "skipped_bnode = #{skipped_bnode}"
+  puts "skipped_non_loc_uri = #{skipped_non_loc_uri}"
+  puts "skipped_no_mapping = #{skipped_no_mapping}"
+  puts "skipped_deprecated = #{skipped_deprecated}"
+  puts "skipped_no_term = #{skipped_no_term}"
+  puts "skipped_no_term_type = #{skipped_no_term_type}"
+  puts "skipped_complex_subject = #{skipped_complex_subject}"
 ensure
   tempfiles.each { |f| f.close! }
 end
