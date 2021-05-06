@@ -232,7 +232,9 @@ begin
   skipped_no_mapping = 0
   skipped_deprecated = 0
   skipped_no_term = 0
+  first_no_term = true
   skipped_no_term_type = 0
+  first_no_type = true
   skipped_complex_subject = 0
 
   File.open(options[:output], "w") do |outfile|
@@ -281,6 +283,11 @@ begin
       #next
       unless term
         skipped_no_term += 1
+        if first_no_term
+          first_no_term = false
+          binding.pry
+        end
+
         next
       end
 
@@ -301,6 +308,10 @@ begin
       #next unless term_type
       unless term_type
         skipped_no_term_type += 1
+        if first_no_type
+          first_no_type = false
+          binding.pry
+        end
         next
       end
 
