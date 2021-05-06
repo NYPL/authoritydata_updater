@@ -172,7 +172,7 @@ begin
 
   puts "\nProcessing each bucket into memcached..."
 
-  cache = Dalli::Client.new("localhost:11211", {})
+  cache = Dalli::Client.new("localhost:11211", { namespace: vocabulary })
   cache.flush_all
 
   all_subjects = Set.new
@@ -188,7 +188,7 @@ begin
 
     threads[bucket] = Thread.new do
       thread_progress_bar = main_progress_bar.register("bucket #{bucket} #{PROGRESS_BAR_FORMAT}", total: bucket_lines, frequency: PROGRESS_BAR_FREQUENCY)
-      thread_cache = Dalli::Client.new("localhost:11211", {})
+      thread_cache = Dalli::Client.new("localhost:11211", { namespace: vocabulary })
       linecount = 0
       tempfile.each do |line|
         if matches = line.match(REGEX_RDF_TRIPPLES)
@@ -228,11 +228,11 @@ begin
   File.open(options[:output], "w") do |outfile|
     docs_progress.iterate(all_subjects) do |subject|
       next if subject.start_with?("_") # bnode
-      next if authority_code == 'lcsh' && !(subject =~ REGEX_LOC_URI)
-  
+      next if authority_code == "lcsh" && !(subject =~ REGEX_LOC_URI)
+
       predicate_to_object_mapping = cache.get(subject)
       next unless predicate_to_object_mapping
-  
+
       authority_code = options[:vocabulary].to_s
 
       status = "unknown"
@@ -241,20 +241,20 @@ begin
         metadata_node = cache.get(metadata_node_name) || {}
         status = metadata_node[LOC_RECORD_STATUS]
       end
-  
+
       next if status == "deprecated"
-  
+
       term = nil
-  
+
       TERM_LABELS.each do |term_label|
         if predicate_to_object_mapping.include?(term_label)
           term = predicate_to_object_mapping[term_label]
           break
         end
       end
-  
+
       next unless term
-  
+
       term_type = vocabulary["term_type"]
       if !term_type
         # this vocabulary does not have a set term type, look it up for this document
@@ -268,12 +268,12 @@ begin
           end
         end
       end
-  
+
       next unless term_type
-      next if authority_code == 'lcsh' && term_type == 'complex_subject'
-  
+      next if authority_code == "lcsh" && term_type == "complex_subject"
+
       record_id = File.basename(subject)
-  
+
       doc = {
         uri: subject,
         term: term,
@@ -287,12 +287,12 @@ begin
         alternate_term: predicate_to_object_mapping[W3_ALT_LABEL],
         alternate_term_idx: predicate_to_object_mapping[W3_ALT_LABEL],
       }
-  
+
       outfile.puts(doc.to_json)
       docs_generated += 1
     end
   end
-  
+
   puts "\n\nGenerated #{docs_generated} Solr documents."
 ensure
   tempfiles.each { |f| f.close! }
