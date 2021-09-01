@@ -1,9 +1,15 @@
+# frozen_string_literal: true
+
+ruby "2.7.3"
 source "https://rubygems.org"
 
-gem "linkeddata"
-gem "nypl_log_formatter"
+git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
+
+gem "redis"
 gem "pry"
-gem "rdf"
+gem "rufo"
 gem "rsolr"
-gem "rsolr-ext"
-gem "gdbm"
+gem "tty-command"
+gem "tty-progressbar"
+gem "tty-spinner"
+gem "ruby-prof"
