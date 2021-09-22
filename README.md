@@ -17,7 +17,9 @@ Install gems with `bundle install`
 
 ## Running
 
-With dependencies installed, run the `rdf_to_solr_docs.rb` with required arguments. To see help text, use the `-h` flag:
+### Generate Solr docs
+
+With dependencies installed, run the `rdf_to_solr_docs.rb` script with required arguments. To see help text, use the `-h` flag:
 
 ```console
 $ ruby rdf_to_solr_docs.rb -h
@@ -31,4 +33,25 @@ For example, to process the Genre & Form Terms vocabulary:
 
 ```console
 $ ruby rdf_to_solr_docs.rb -v lcgft -s data/source/authoritiesgenreForms.madsrdf.nt -o data/output/lcgft.json
+```
+
+### Upload Solr docs
+
+Now that you have generated solr docs, upload them to solr using the `post_to_solr.rb` script. To see help text, use the `-h` flag:
+
+```console
+$ ruby post_to_solr.rb -h
+Usage: post_to_solr.rb [options]
+    -s, --source [SOURCE]            The JSON file containing documents. (Output from rds_to_solr_docs.rb)
+    -d [SOLR_DESTINATION],           URL to Solr
+        --solr_destination
+    -u, --username [USERNAME]        Solr username
+    -p, --password [PASSWORD]        Solr password
+    -a, --append                     Do not delete existing documents for this authority first
+```
+
+For example, to upload the Genre & Form Terms generated from the above example to a Solr instance running on localhost:
+
+```console
+ruby post_to_solr.rb -s data/output/lcgft.json -d http://localhost:8981/solr/authoritydata
 ```

@@ -15,23 +15,20 @@ DOCS_PER_BATCH = 10000
 options = {}
 
 opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename($0)} [options]"
+
   opts.on("-s", "--source [SOURCE]", String, "The JSON file containing documents. (Output from rds_to_solr_docs.rb)")
-  opts.on("-h", "--solr_host [SOLR_HOST]", String, "URL to Solr")
+  opts.on("-d", "--solr_destination [SOLR_DESTINATION]", String, "URL to Solr")
   opts.on("-u", "--username [USERNAME]", String, "Solr username")
   opts.on("-p", "--password [PASSWORD]", String, "Solr password")
   opts.on("-a", "--append", "Do not delete existing documents for this authority first")
-
-  opts.on_tail("-h", "--help", "Show this message") do
-    puts opts
-    exit
-  end
 end
 
 opt_parser.parse!(into: options)
 
 SOLR_USERNAME = options[:solr_username]
 SOLR_PASSWORD = options[:solr_password]
-SOLR = RSolr.connect(url: options[:solr_host])
+SOLR = RSolr.connect(url: options[:solr_destination])
 
 total_lines = 0
 TTY::Spinner.new("Counting documents... :spinner").run do |spinner|
