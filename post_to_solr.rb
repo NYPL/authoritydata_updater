@@ -44,7 +44,7 @@ unless options[:append]
   first_document = JSON.parse(first_line)
   authority_code = first_document['authority_code']
   puts "Deleting documents where authority_code=#{authority_code}"
-  SOLR.delete_by_query("authority_code:#{authority_code}")
+  SOLR.delete_by_query("authority_code:\"#{authority_code}\"")
   SOLR.commit
   puts "\tdone"
 end
