@@ -19,8 +19,8 @@ opt_parser = OptionParser.new do |opts|
 
   opts.on("-s", "--source [SOURCE]", String, "The JSON file containing documents. (Output from rds_to_solr_docs.rb)")
   opts.on("-d", "--solr_destination [SOLR_DESTINATION]", String, "URL to Solr")
-  opts.on("-u", "--username [USERNAME]", String, "Solr username")
-  opts.on("-p", "--password [PASSWORD]", String, "Solr password")
+  opts.on("-u", "--solr_username [USERNAME]", String, "Solr username (optional)")
+  opts.on("-p", "--solr_password [PASSWORD]", String, "Solr password (optional)")
   opts.on("-a", "--append", "Do not delete existing documents for this authority first")
 end
 
