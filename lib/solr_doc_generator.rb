@@ -261,6 +261,9 @@ class SolrDocGenerator
     return if @deprecated_metadata_nodes.include?(authoritative_record.metadata_node)
     return if authoritative_record.authority_code == :lcsh && authoritative_record.term_type == "complex_subject"
 
+    return unless authoritative_record.term
+    return unless authoritative_record.term_type
+
     # doc = {
     #   uri: subject_data[:subject],
     #   term: term,
