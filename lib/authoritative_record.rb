@@ -22,6 +22,19 @@ class AuthoritativeRecord
     },
   }.freeze
 
+  TERM_TYPE_MAPPING = {
+    "http://www.loc.gov/mads/rdf/v1#Topic" => "topic",
+    "http://www.loc.gov/mads/rdf/v1#Geographic" => "geographic",
+    "http://www.loc.gov/mads/rdf/v1#PersonalName" => "name_personal",
+    "http://www.loc.gov/mads/rdf/v1#ComplexSubject" => "complex_subject",
+    "http://www.loc.gov/mads/rdf/v1#CorporateName" => "name_corporate",
+    "http://www.loc.gov/mads/rdf/v1#GenreForm" => "genreform",
+    "http://www.loc.gov/mads/rdf/v1#Temporal" => "temporal",
+    "http://www.loc.gov/mads/rdf/v1#NameTitle" => "name_title",
+    "http://www.loc.gov/mads/rdf/v1#Title" => "title",
+    "http://www.loc.gov/mads/rdf/v1#ConferenceName" => "name_conference",
+  }.freeze
+
   attr_reader :authority_code, :authority_name, :subject
 
   def initialize(authority_code, subject)
@@ -62,7 +75,7 @@ class AuthoritativeRecord
     if vocabulary.include?(:term_type)
       return vocabulary[:term_type]
     else
-      document_types = @data[W3_TYPE]
+      document_types = @data[RdfTriple::W3_TYPE]
       if document_types
         TERM_TYPE_MAPPING.each do |term_type_iri, value|
           if document_types.include?(term_type_iri)
