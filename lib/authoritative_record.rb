@@ -17,9 +17,20 @@ class AuthoritativeRecord
     end
   end
 
+  def term
+    if @data.include?(LOC_AUTHORITATIVE_LABEL)
+      @data[LOC_AUTHORITATIVE_LABEL]
+    elsif @data.include?(W3_PREF_LABEL)
+      @data[W3_PREF_LABEL].first
+    elsif @data.include?(W3_RDF_LABEL)
+      @data[W3_RDF_LABEL]
+    end
+  end
+
   def as_json(options={})
     {
-      uri: @subject
+      uri: @subject,
+      term: term
     }
   end
 
