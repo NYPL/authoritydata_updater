@@ -15,6 +15,14 @@ search queries a Solr index. The documents in that index need to be updated peri
 
 Install gems with `bundle install`
 
+## Tests
+
+Run tests with the `run_tests.rb` script:
+
+```console
+$ ruby test/run_tests.rb 
+```
+
 ## Running
 
 ### Generate Solr docs
