@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
 class AuthoritativeRecord
-  attr_reader :subject
+  attr_reader :authority_code, :authority_name, :subject
 
-  def initialize(subject)
+  def initialize(authority_code, subject)
+    unless VOCABULARIES.keys.include?(authority_code)
+      raise ArgumentError, "authority_code must be one of: #{VOCABULARIES.keys.join(", ")}"
+    end
+
+    @authority_code = authority_code
+    @authority_name = VOCABULARIES[authority_code][:authority_name]
     @subject = subject
     @data = {}
   end
@@ -19,18 +25,39 @@ class AuthoritativeRecord
 
   def term
     if @data.include?(LOC_AUTHORITATIVE_LABEL)
-      @data[LOC_AUTHORITATIVE_LABEL]
+      return @data[LOC_AUTHORITATIVE_LABEL]
     elsif @data.include?(W3_PREF_LABEL)
-      @data[W3_PREF_LABEL].first
+      return @data[W3_PREF_LABEL].first
     elsif @data.include?(W3_RDF_LABEL)
-      @data[W3_RDF_LABEL]
+      return @data[W3_RDF_LABEL]
+    end
+  end
+
+  def vocabulary
+    VOCABULARIES[@authority_code]
+  end
+
+  def term_type
+    if vocabulary.include?(:term_type)
+      return vocabulary[:term_type]
+    else
+      document_types = @data[W3_TYPE]
+      if document_types
+        TERM_TYPE_MAPPING.each do |term_type_iri, value|
+          if document_types.include?(term_type_iri)
+            return value
+          end
+        end
+      end
     end
   end
 
   def as_json(options={})
     {
       uri: @subject,
-      term: term
+      term: term,
+      term_idx: term,
+      term_type: term_type
     }
   end
 
