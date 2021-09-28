@@ -55,3 +55,24 @@ For example, to upload the Genre & Form Terms generated from the above example t
 ```console
 ruby post_to_solr.rb -s data/output/lcgft.json -d http://localhost:8981/solr/authoritydata
 ```
+
+### Backup Solr docs
+
+You can download a backup of existing solr docs using the `pull_from_solr.rb` script. To see help text, use the `-h` flag:
+
+```console
+$ ruby pull_from_solr.rb -h
+Usage: pull_from_solr.rb [options]
+    -d [SOLR_DESTINATION],           URL to Solr
+        --solr_destination
+    -u, --solr_username [USERNAME]   Solr username (optional)
+    -p, --solr_password [PASSWORD]   Solr password (optional)
+    -a, --append                     Do not delete existing documents for this authority first
+    -o, --output [OUTPUT]            Output file (optional)
+```
+
+For example, to back up the NAF vocabulary from QA:
+
+```console
+ruby pull_from_solr.rb -d http://10.225.133.217:8983/solr/authoritydata
+```
