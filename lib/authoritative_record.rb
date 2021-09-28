@@ -60,6 +60,14 @@ class AuthoritativeRecord
     File.basename(subject)
   end
 
+  def valid?
+    return false if subject.start_with?("_") # bnode
+    return false if authority_code == :lcsh && !(subject =~ REGEX_LOC_URI)
+    return false if authority_code == :lcsh && term_type == "complex_subject"
+    return false unless term && term_type
+    true
+  end
+
   def as_json(options={})
     {
       uri: @subject,

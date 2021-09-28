@@ -61,16 +61,8 @@ VOCABULARIES = {
 }.freeze
 
 class SolrDocGenerator
-  attr_reader :authority_code, :authority_name, :term_type, :verbose
-
   def initialize(authority_code, source, output, verbose = false)
-    unless VOCABULARIES.keys.include?(authority_code)
-      raise ArgumentError, "vocabulary must be one of: #{VOCABULARIES.keys.join(", ")}"
-    end
-
     @authority_code = authority_code
-    @authority_name = VOCABULARIES[authority_code][:authority_name]
-    @term_type = VOCABULARIES[authority_code][:term_type]
     @source = source
     @output = output
     @verbose = verbose
@@ -94,11 +86,11 @@ class SolrDocGenerator
       if(triple.valid_predicate?)
         if authoritative_record.nil?
           # first document encountered, happens only once
-          authoritative_record = AuthoritativeRecord.new(authority_code, triple.subject)
+          authoritative_record = AuthoritativeRecord.new(@authority_code, triple.subject)
         elsif authoritative_record.subject != triple.subject
           # new subject, write the current one and start a new one
           generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO fix
-          authoritative_record = AuthoritativeRecord.new(authority_code, triple.subject)
+          authoritative_record = AuthoritativeRecord.new(@authority_code, triple.subject)
         end
 
         authoritative_record.add_triple(triple)
@@ -243,41 +235,9 @@ class SolrDocGenerator
     tempfile
   end
 
-  def parse_value(value)
-    if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
-      return match[:language] == "en" ? match[:value] : nil
-    elsif match = value.match(REGEX_IRI)
-      return match[:value]
-    elsif match = value.match(REGEX_LITERAL)
-      return match[:value]
-    else
-      raise "Unable to parse RDF value: #{value}"
-    end
-  end
-
   def write_solr_doc(authoritative_record, outfile)
-    return if authoritative_record.subject.start_with?("_") # bnode
-    return if authoritative_record.authority_code == :lcsh && !(authoritative_record.subject =~ REGEX_LOC_URI)
+    return unless authoritative_record.valid?
     return if @deprecated_metadata_nodes.include?(authoritative_record.metadata_node)
-    return if authoritative_record.authority_code == :lcsh && authoritative_record.term_type == "complex_subject"
-
-    return unless authoritative_record.term
-    return unless authoritative_record.term_type
-
-    # doc = {
-    #   uri: subject_data[:subject],
-    #   term: term,
-    #   term_idx: term,
-    #   term_type: term_type,
-    #   record_id: record_id,
-    #   language: "en",
-    #   authority_code: @authority_code,
-    #   authority_name: @authority_name,
-    #   unique_id: "#{@authority_code}_#{record_id}",
-    #   alternate_term_idx: subject_data[W3_ALT_LABEL]&.to_a,
-    #   alternate_term: subject_data[W3_ALT_LABEL]&.to_a,
-    # }
-
     outfile.puts(authoritative_record.to_json)
     return true
   end
