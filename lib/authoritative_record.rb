@@ -1,6 +1,27 @@
 # frozen_string_literal: true
 
 class AuthoritativeRecord
+  VOCABULARIES = {
+    lcgft: {
+      authority_name: "Library of Congress Genre/Form Terms for Library and Archival Materials",
+      term_type: "genreform",
+    },
+    lctgm: {
+      authority_name: "Thesaurus for Graphic Materials",
+      term_type: "concept",
+    },
+    lcsh: {
+      authority_name: "Library of Congress subject headings",
+    },
+    naf: {
+      authority_name: "LC/NACO authority file",
+    },
+    aat: {
+      authority_name: "Art and Architecture Thesaurus",
+      term_type: "concept",
+    },
+  }.freeze
+
   attr_reader :authority_code, :authority_name, :subject
 
   def initialize(authority_code, subject)
@@ -24,12 +45,12 @@ class AuthoritativeRecord
   end
 
   def term
-    if @data.include?(LOC_AUTHORITATIVE_LABEL)
-      return @data[LOC_AUTHORITATIVE_LABEL]
-    elsif @data.include?(W3_PREF_LABEL)
-      return @data[W3_PREF_LABEL].first
-    elsif @data.include?(W3_RDF_LABEL)
-      return @data[W3_RDF_LABEL]
+    if @data.include?(RdfTriple::LOC_AUTHORITATIVE_LABEL)
+      return @data[RdfTriple::LOC_AUTHORITATIVE_LABEL]
+    elsif @data.include?(RdfTriple::W3_PREF_LABEL)
+      return @data[RdfTriple::W3_PREF_LABEL].first
+    elsif @data.include?(RdfTriple::W3_RDF_LABEL)
+      return @data[RdfTriple::W3_RDF_LABEL]
     end
   end
 
@@ -53,16 +74,20 @@ class AuthoritativeRecord
   end
 
   def metadata_node
-    @data[LOC_ADMIN_METADATA]
+    @data[RdfTriple::LOC_ADMIN_METADATA]
   end
 
   def record_id
     File.basename(subject)
   end
 
+  def alternate_term
+    @data[RdfTriple::W3_ALT_LABEL]&.to_a
+  end
+
   def valid?
     return false if subject.start_with?("_") # bnode
-    return false if authority_code == :lcsh && !(subject =~ REGEX_LOC_URI)
+    return false if authority_code == :lcsh && !(subject =~ RdfTriple::REGEX_LOC_URI)
     return false if authority_code == :lcsh && term_type == "complex_subject"
     return false unless term && term_type
     true
@@ -75,6 +100,12 @@ class AuthoritativeRecord
       term_idx: term,
       term_type: term_type,
       record_id: record_id,
+      language: "en",
+      authority_code: @authority_code,
+      authority_name: @authority_name,
+      unique_id: "#{@authority_code}_#{record_id}",
+      alternate_term_idx: alternate_term,
+      alternate_term: alternate_term,
     }
   end
 

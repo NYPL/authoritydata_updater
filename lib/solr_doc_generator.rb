@@ -16,50 +16,6 @@ PROGRESS_BAR_UPDATE_DOC_COUNT = 5_000
 
 DOCUMENTS_PER_TEMPFILE = 1_000_000
 
-LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
-LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
-LOC_RECORD_STATUS = "http://id.loc.gov/ontologies/RecordInfo#recordStatus"
-LOC_STATUS_DEPRECATED = '"deprecated"^^<http://www.w3.org/2001/XMLSchema#string>'
-
-W3_RDF_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"
-W3_PREF_LABEL = "http://www.w3.org/2004/02/skos/core#prefLabel"
-W3_ALT_LABEL = "http://www.w3.org/2004/02/skos/core#altLabel"
-W3_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-
-TERM_TYPE_MAPPING = {
-  "http://www.loc.gov/mads/rdf/v1#Topic" => "topic",
-  "http://www.loc.gov/mads/rdf/v1#Geographic" => "geographic",
-  "http://www.loc.gov/mads/rdf/v1#PersonalName" => "name_personal",
-  "http://www.loc.gov/mads/rdf/v1#ComplexSubject" => "complex_subject",
-  "http://www.loc.gov/mads/rdf/v1#CorporateName" => "name_corporate",
-  "http://www.loc.gov/mads/rdf/v1#GenreForm" => "genreform",
-  "http://www.loc.gov/mads/rdf/v1#Temporal" => "temporal",
-  "http://www.loc.gov/mads/rdf/v1#NameTitle" => "name_title",
-  "http://www.loc.gov/mads/rdf/v1#Title" => "title",
-  "http://www.loc.gov/mads/rdf/v1#ConferenceName" => "name_conference",
-}.freeze
-
-VOCABULARIES = {
-  lcgft: {
-    authority_name: "Library of Congress Genre/Form Terms for Library and Archival Materials",
-    term_type: "genreform",
-  },
-  lctgm: {
-    authority_name: "Thesaurus for Graphic Materials",
-    term_type: "concept",
-  },
-  lcsh: {
-    authority_name: "Library of Congress subject headings",
-  },
-  naf: {
-    authority_name: "LC/NACO authority file",
-  },
-  aat: {
-    authority_name: "Art and Architecture Thesaurus",
-    term_type: "concept",
-  },
-}.freeze
-
 class SolrDocGenerator
   def initialize(authority_code, source, output, verbose = false)
     @authority_code = authority_code
@@ -137,7 +93,7 @@ class SolrDocGenerator
           bucket = []
         end
 
-        if triple.predicate == LOC_RECORD_STATUS && triple.object == LOC_STATUS_DEPRECATED
+        if triple.deprecated?
           @deprecated_metadata_nodes << triple.subject
         end
 

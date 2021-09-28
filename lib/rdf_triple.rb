@@ -55,15 +55,19 @@ class RdfTriple
   end
 
   def valid_predicate?
-    ALL_PREDICATES.include?(predicate)
+    ALL_PREDICATES.include?(@predicate)
   end
 
   def singular_predicate?
-    SINGULAR_PREDICATES.include?(predicate)
+    SINGULAR_PREDICATES.include?(@predicate)
   end
 
   def multi_predicate?
-    MULTI_PREDICATES.include?(predicate)
+    MULTI_PREDICATES.include?(@predicate)
+  end
+
+  def deprecated?
+    @predicate == LOC_RECORD_STATUS && @object == LOC_STATUS_DEPRECATED
   end
 
   private
