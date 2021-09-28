@@ -7,6 +7,7 @@ require "tty-progressbar"
 require "tty-spinner"
 require "zlib"
 
+require "authoritative_record"
 require "rdf_triple"
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
@@ -84,7 +85,6 @@ class SolrDocGenerator
     progress = 0
     generated_docs = 0
     outfile = File.open(@output, "w")
-    #subject_data = nil
     authoritative_record = nil
 
     bar = TTY::ProgressBar.new(PROGRESS_BAR_FORMAT, total: sorted_lines, frequency: PROGRESS_BAR_FREQUENCY) if @verbose
@@ -94,12 +94,11 @@ class SolrDocGenerator
       if(triple.valid_predicate?)
         if authoritative_record.nil?
           # first document encountered, happens only once
-          #subject_data = { subject: triple.subject }
-          authoritative_record = AuthoritativeRecord.new(triple.subject)
-        elsif subject_data[:subject] != triple.subject
+          authoritative_record = AuthoritativeRecord.new(authority_code, triple.subject)
+        elsif authoritative_record.subject != triple.subject
           # new subject, write the current one and start a new one
           generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO fix
-          authoritative_record = AuthoritativeRecord.new(triple.subject)
+          authoritative_record = AuthoritativeRecord.new(authority_code, triple.subject)
         end
 
         authoritative_record.add_triple(triple)
@@ -256,55 +255,27 @@ class SolrDocGenerator
     end
   end
 
-  def write_solr_doc(subject_data, outfile)
-    return if subject_data[:subject].start_with?("_") # bnode
-    return if subject_data[:authority_code] == "lcsh" && !(subject_data[:subject] =~ REGEX_LOC_URI)
-    return if @deprecated_metadata_nodes.include?(subject_data[LOC_ADMIN_METADATA])
+  def write_solr_doc(authoritative_record, outfile)
+    return if authoritative_record.subject.start_with?("_") # bnode
+    return if authoritative_record.authority_code == :lcsh && !(authoritative_record.subject =~ REGEX_LOC_URI)
+    return if @deprecated_metadata_nodes.include?(authoritative_record.metadata_node)
+    return if authoritative_record.authority_code == :lcsh && authoritative_record.term_type == "complex_subject"
 
-    term = nil
-    if subject_data.include?(LOC_AUTHORITATIVE_LABEL)
-      term = subject_data[LOC_AUTHORITATIVE_LABEL]
-    elsif subject_data.include?(W3_PREF_LABEL)
-      term = subject_data[W3_PREF_LABEL].first
-    elsif subject_data.include?(W3_RDF_LABEL)
-      term = subject_data[W3_RDF_LABEL]
-    end
-    return unless term
+    # doc = {
+    #   uri: subject_data[:subject],
+    #   term: term,
+    #   term_idx: term,
+    #   term_type: term_type,
+    #   record_id: record_id,
+    #   language: "en",
+    #   authority_code: @authority_code,
+    #   authority_name: @authority_name,
+    #   unique_id: "#{@authority_code}_#{record_id}",
+    #   alternate_term_idx: subject_data[W3_ALT_LABEL]&.to_a,
+    #   alternate_term: subject_data[W3_ALT_LABEL]&.to_a,
+    # }
 
-    term_type = @term_type
-    if !term_type
-      # this vocabulary does not have a set term type, look it up for this document
-      document_types = subject_data[W3_TYPE]
-      if document_types
-        TERM_TYPE_MAPPING.each do |term_type_iri, value|
-          if document_types.include?(term_type_iri)
-            term_type = value
-            break
-          end
-        end
-      end
-    end
-    return unless term_type
-
-    return if @authority_code == :lcsh && term_type == "complex_subject"
-
-    record_id = File.basename(subject_data[:subject])
-
-    doc = {
-      uri: subject_data[:subject],
-      term: term,
-      term_idx: term,
-      term_type: term_type,
-      record_id: record_id,
-      language: "en",
-      authority_code: @authority_code,
-      authority_name: @authority_name,
-      unique_id: "#{@authority_code}_#{record_id}",
-      alternate_term_idx: subject_data[W3_ALT_LABEL]&.to_a,
-      alternate_term: subject_data[W3_ALT_LABEL]&.to_a,
-    }
-
-    outfile.puts(doc.to_json)
+    outfile.puts(authoritative_record.to_json)
     return true
   end
 end

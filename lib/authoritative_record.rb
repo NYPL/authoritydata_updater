@@ -52,12 +52,21 @@ class AuthoritativeRecord
     end
   end
 
+  def metadata_node
+    @data[LOC_ADMIN_METADATA]
+  end
+
+  def record_id
+    File.basename(subject)
+  end
+
   def as_json(options={})
     {
       uri: @subject,
       term: term,
       term_idx: term,
-      term_type: term_type
+      term_type: term_type,
+      record_id: record_id,
     }
   end
 
