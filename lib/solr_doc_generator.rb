@@ -84,35 +84,32 @@ class SolrDocGenerator
     progress = 0
     generated_docs = 0
     outfile = File.open(@output, "w")
-    subject_data = nil
+    #subject_data = nil
+    authoritative_record = nil
 
     bar = TTY::ProgressBar.new(PROGRESS_BAR_FORMAT, total: sorted_lines, frequency: PROGRESS_BAR_FREQUENCY) if @verbose
 
     sorted_file.each do |line|
       triple = RdfTriple.parse(line)
       if(triple.valid_predicate?)
-        if subject_data.nil?
+        if authoritative_record.nil?
           # first document encountered, happens only once
-          subject_data = { subject: triple.subject }
+          #subject_data = { subject: triple.subject }
+          authoritative_record = AuthoritativeRecord.new(triple.subject)
         elsif subject_data[:subject] != triple.subject
           # new subject, write the current one and start a new one
-          generated_docs += 1 if write_solr_doc(subject_data, outfile)
-          subject_data = { subject: triple.subject }
+          generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO fix
+          authoritative_record = AuthoritativeRecord.new(triple.subject)
         end
 
-        if triple.singular_predicate?
-          subject_data[triple.predicate] = triple.object
-        elsif triple.multi_predicate?
-          subject_data[triple.predicate] ||= Set.new
-          subject_data[triple.predicate] << triple.object
-        end
+        authoritative_record.add_triple(triple)
       end
 
       progress += 1
       bar.advance(PROGRESS_BAR_UPDATE_DOC_COUNT) if progress % PROGRESS_BAR_UPDATE_DOC_COUNT == 0 if @verbose
     end
 
-    generated_docs += 1 if write_solr_doc(subject_data, outfile)
+    generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO: fix
     outfile.close
 
     if @verbose

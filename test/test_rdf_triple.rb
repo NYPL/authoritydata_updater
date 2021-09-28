@@ -1,5 +1,4 @@
 require "rdf_triple"
-require "pry"
 
 class TestRdfTriple < Test::Unit::TestCase
   RDF_TEST_SUBJECT = "http://id.loc.gov/authorities/genreForms/gf2011026028"
