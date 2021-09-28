@@ -9,7 +9,7 @@ class RdfTriple
     matches = triple_string.match(REGEX_RDF_TRIPPLES)
     raise ArgumentError unless matches
 
-    new matches[:subject], matches[:predicate], matches[:object]
+    new(matches[:subject], matches[:predicate], matches[:object])
   end
 
   def initialize(subject, predicate, object)
