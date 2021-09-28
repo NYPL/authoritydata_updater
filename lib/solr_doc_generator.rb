@@ -25,23 +25,6 @@ W3_PREF_LABEL = "http://www.w3.org/2004/02/skos/core#prefLabel"
 W3_ALT_LABEL = "http://www.w3.org/2004/02/skos/core#altLabel"
 W3_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 
-# predicates that occur a single time per subject
-SINGULAR_PREDICATES = [
-  LOC_ADMIN_METADATA,
-  LOC_RECORD_STATUS,
-  LOC_AUTHORITATIVE_LABEL,
-  W3_RDF_LABEL,
-].freeze
-
-# predicates that may occur multiple times per subject
-MULTI_PREDICATES = [
-  W3_TYPE,
-  W3_ALT_LABEL,
-  W3_PREF_LABEL,
-].freeze
-
-ALL_PREDICATES = (SINGULAR_PREDICATES + MULTI_PREDICATES).freeze
-
 TERM_TYPE_MAPPING = {
   "http://www.loc.gov/mads/rdf/v1#Topic" => "topic",
   "http://www.loc.gov/mads/rdf/v1#Geographic" => "geographic",
@@ -107,8 +90,7 @@ class SolrDocGenerator
 
     sorted_file.each do |line|
       triple = RdfTriple.parse(line)
-
-      if ALL_PREDICATES.include?(triple.predicate)
+      if(triple.valid_predicate?)
         if subject_data.nil?
           # first document encountered, happens only once
           subject_data = { subject: triple.subject }
@@ -118,9 +100,9 @@ class SolrDocGenerator
           subject_data = { subject: triple.subject }
         end
 
-        if SINGULAR_PREDICATES.include?(triple.predicate)
+        if triple.singular_predicate?
           subject_data[triple.predicate] = triple.object
-        else
+        elsif triple.multi_predicate?
           subject_data[triple.predicate] ||= Set.new
           subject_data[triple.predicate] << triple.object
         end
@@ -263,6 +245,18 @@ class SolrDocGenerator
     zipfile.close
 
     tempfile
+  end
+
+  def parse_value(value)
+    if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
+      return match[:language] == "en" ? match[:value] : nil
+    elsif match = value.match(REGEX_IRI)
+      return match[:value]
+    elsif match = value.match(REGEX_LITERAL)
+      return match[:value]
+    else
+      raise "Unable to parse RDF value: #{value}"
+    end
   end
 
   def write_solr_doc(subject_data, outfile)
