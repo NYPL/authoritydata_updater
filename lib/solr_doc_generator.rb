@@ -7,10 +7,7 @@ require "tty-progressbar"
 require "tty-spinner"
 require "zlib"
 
-REGEX_RDF_TRIPPLES = /^(?<subject>.+?) <(?<predicate>.+?)> (?<object>.+?) \.$/
-REGEX_LITERAL_WITH_LANGUAGE = /^\"(?<value>.+)\"@(?<language>.\w+)$/
-REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/
-REGEX_IRI = /^<(?<value>.+)>$/
+require "rdf_triple"
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
 PROGRESS_BAR_FREQUENCY = 2
@@ -109,28 +106,23 @@ class SolrDocGenerator
     bar = TTY::ProgressBar.new(PROGRESS_BAR_FORMAT, total: sorted_lines, frequency: PROGRESS_BAR_FREQUENCY) if @verbose
 
     sorted_file.each do |line|
-      matches = line.match(REGEX_RDF_TRIPPLES)
+      triple = RdfTriple.parse(line)
 
-      if ALL_PREDICATES.include?(matches[:predicate])
-        subject = parse_value(matches[:subject])
-
+      if ALL_PREDICATES.include?(triple.predicate)
         if subject_data.nil?
           # first document encountered, happens only once
-          subject_data = { subject: subject }
-        elsif subject_data[:subject] != subject
+          subject_data = { subject: triple.subject }
+        elsif subject_data[:subject] != triple.subject
           # new subject, write the current one and start a new one
           generated_docs += 1 if write_solr_doc(subject_data, outfile)
-          subject_data = { subject: subject }
+          subject_data = { subject: triple.subject }
         end
 
-        predicate = parse_value(matches[:predicate])
-        object = parse_value(matches[:object])
-
-        if SINGULAR_PREDICATES.include?(predicate)
-          subject_data[predicate] = object
+        if SINGULAR_PREDICATES.include?(triple.predicate)
+          subject_data[triple.predicate] = triple.object
         else
-          subject_data[predicate] ||= Set.new
-          subject_data[predicate] << object
+          subject_data[triple.predicate] ||= Set.new
+          subject_data[triple.predicate] << triple.object
         end
       end
 
@@ -167,18 +159,22 @@ class SolrDocGenerator
     sorted_lines = 0
 
     File.open(@source, "r").each do |line|
-      if matches = line.match(REGEX_RDF_TRIPPLES)
+      begin
+        triple = RdfTriple.parse(line)
+
         if bucket.length >= DOCUMENTS_PER_TEMPFILE
           tempfiles << dump_bucket_to_tmp_file(bucket)
           bucket = []
         end
 
-        if matches[:predicate] == LOC_RECORD_STATUS && matches[:object] == LOC_STATUS_DEPRECATED
-          @deprecated_metadata_nodes << matches[:subject]
+        if triple.predicate == LOC_RECORD_STATUS && triple.object == LOC_STATUS_DEPRECATED
+          @deprecated_metadata_nodes << triple.subject
         end
 
-        bucket << [matches[:subject], line]
+        bucket << [triple.subject, line]
         sorted_lines += 1
+      rescue RdfTriple::ParseError
+        # ignore this invalid line
       end
 
       read_lines += 1
@@ -267,18 +263,6 @@ class SolrDocGenerator
     zipfile.close
 
     tempfile
-  end
-
-  def parse_value(value)
-    if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
-      return match[:language] == "en" ? match[:value] : nil
-    elsif match = value.match(REGEX_IRI)
-      return match[:value]
-    elsif match = value.match(REGEX_LITERAL)
-      return match[:value]
-    else
-      raise "Unable to parse RDF value: #{value}"
-    end
   end
 
   def write_solr_doc(subject_data, outfile)
