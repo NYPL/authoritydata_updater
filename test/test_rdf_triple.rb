@@ -1,20 +1,12 @@
 require "rdf_triple"
 
 class TestRdfTriple < Test::Unit::TestCase
-  RDF_TEST_SUBJECT = "http://id.loc.gov/authorities/genreForms/gf2011026028"
-  RDF_TEST_PREDICATE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-  RDF_TEST_OBJECT = "http://www.loc.gov/mads/rdf/v1#GenreForm"
-
-  def create_triple_string(subject, predicate, object)
-    "<#{subject}> <#{predicate}> <#{object}> ."
-  end
-
   def test_parsing
-    triple_string = create_triple_string(RDF_TEST_SUBJECT, RDF_TEST_PREDICATE, RDF_TEST_OBJECT)
+    triple_string = "<subject> <predicate> <object> ."
     triple = RdfTriple.parse(triple_string)
-    assert_equal triple.subject, RDF_TEST_SUBJECT
-    assert_equal triple.predicate, RDF_TEST_PREDICATE
-    assert_equal triple.object, RDF_TEST_OBJECT
+    assert_equal "subject", triple.subject
+    assert_equal "predicate", triple.predicate
+    assert_equal "object", triple.object
   end
 
   def test_parse_invalid
@@ -24,14 +16,45 @@ class TestRdfTriple < Test::Unit::TestCase
   end
 
   def test_valid_predicate
-    triple_string = create_triple_string(RDF_TEST_SUBJECT, RDF_TEST_PREDICATE, RDF_TEST_OBJECT)
+    triple_string = "<subject> <#{RdfTriple::LOC_AUTHORITATIVE_LABEL}> <object> ."
     triple = RdfTriple.parse(triple_string)
     assert_true triple.valid_predicate?
+    assert_equal RdfTriple::LOC_AUTHORITATIVE_LABEL, triple.predicate
   end
 
   def test_invalid_predicate
-    triple_string = create_triple_string(RDF_TEST_SUBJECT, "invalid predicate", RDF_TEST_OBJECT)
+    triple_string = "<subject> <invalid_predicate> <object> ."
     triple = RdfTriple.parse(triple_string)
     assert_false triple.valid_predicate?
+  end
+
+  def test_parse_value_literal
+    triple_string = "<subject> <predicate> \"Abraham Lincoln\" ."
+    triple = RdfTriple.parse(triple_string)
+    assert_equal "Abraham Lincoln", triple.object
+  end
+
+  def test_parse_value_literal_with_language
+    triple_string = "<subject> <predicate> \"Abraham Lincoln\"@en ."
+    triple = RdfTriple.parse(triple_string)
+    assert_equal "Abraham Lincoln", triple.object
+  end
+
+  def test_parse_value_literal_with_language_non_english
+    triple_string = "<subject> <predicate> \"livre\"@fr ."
+    triple = RdfTriple.parse(triple_string)
+    assert_equal nil, triple.object
+  end
+
+  def test_parse_value_literal_with_diacritics
+    triple_string = "<subject> <predicate> \"Miranda \\u00C1lvarez\" ."
+    triple = RdfTriple.parse(triple_string)
+    assert_equal "Miranda Álvarez", triple.object
+  end
+
+  def test_parse_value_iri
+    triple_string = "<subject> <predicate> <some_iri> ."
+    triple = RdfTriple.parse(triple_string)
+    assert_equal "some_iri", triple.object
   end
 end

@@ -5,6 +5,7 @@ class RdfTriple
   REGEX_LITERAL_WITH_LANGUAGE = /^\"(?<value>.+)\"@(?<language>.\w+)$/
   REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/
   REGEX_IRI = /^<(?<value>.+)>$/
+  REGEX_ESCAPED_UNICODE = /\\u([\da-fA-F]{4})/
 
   LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
   LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
@@ -73,14 +74,27 @@ class RdfTriple
   private
 
   def self.parse_value(value)
+    parsed_value = nil
+
     if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
-      return match[:language] == "en" ? match[:value] : nil
+      if match[:language] == "en"
+        parsed_value = match[:value]
+      else
+        return nil
+      end
+      parsed_value = match[:language] == "en" ? match[:value] : nil
     elsif match = value.match(REGEX_IRI)
-      return match[:value]
+      parsed_value = match[:value]
     elsif match = value.match(REGEX_LITERAL)
-      return match[:value]
+      parsed_value = match[:value]
     else
-      raise "Unable to parse RDF value: #{value}"
+      return nil
     end
+
+    return unescape_unicode(parsed_value)
+  end
+
+  def self.unescape_unicode(value)
+    value.gsub(REGEX_ESCAPED_UNICODE) {|m| [$1].pack("H*").unpack("n*").pack("U*")}
   end
 end

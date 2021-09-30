@@ -115,7 +115,7 @@ class SolrDocGenerator
       puts "Merging into single file..."
     end
 
-    tempfile_readers = tempfiles.map { |f| Zlib::GzipReader.new(open(f.path)) }
+    tempfile_readers = tempfiles.map { |f| Zlib::GzipReader.new(open(f.path, "r")) }
 
     heads = tempfile_readers.each_with_index.map do |tempfile, i|
       [tempfile.readline, i]
@@ -155,7 +155,7 @@ class SolrDocGenerator
 
     mergefile_writer.close
 
-    mergefile_reader = Zlib::GzipReader.new(open(@mergefile.path))
+    mergefile_reader = Zlib::GzipReader.new(open(@mergefile.path, "r"))
     return mergefile_reader, merge_line_count
   end
 
