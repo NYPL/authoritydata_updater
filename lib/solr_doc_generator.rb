@@ -7,10 +7,8 @@ require "tty-progressbar"
 require "tty-spinner"
 require "zlib"
 
-REGEX_RDF_TRIPPLES = /^(?<subject>.+?) <(?<predicate>.+?)> (?<object>.+?) \.$/
-REGEX_LITERAL_WITH_LANGUAGE = /^\"(?<value>.+)\"@(?<language>.\w+)$/
-REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/
-REGEX_IRI = /^<(?<value>.+)>$/
+require "authoritative_record"
+require "rdf_triple"
 
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
 PROGRESS_BAR_FREQUENCY = 2
@@ -18,78 +16,9 @@ PROGRESS_BAR_UPDATE_DOC_COUNT = 5_000
 
 DOCUMENTS_PER_TEMPFILE = 1_000_000
 
-LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
-LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"
-LOC_RECORD_STATUS = "http://id.loc.gov/ontologies/RecordInfo#recordStatus"
-LOC_STATUS_DEPRECATED = '"deprecated"^^<http://www.w3.org/2001/XMLSchema#string>'
-
-W3_RDF_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"
-W3_PREF_LABEL = "http://www.w3.org/2004/02/skos/core#prefLabel"
-W3_ALT_LABEL = "http://www.w3.org/2004/02/skos/core#altLabel"
-W3_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-
-# predicates that occur a single time per subject
-SINGULAR_PREDICATES = [
-  LOC_ADMIN_METADATA,
-  LOC_RECORD_STATUS,
-  LOC_AUTHORITATIVE_LABEL,
-  W3_RDF_LABEL,
-].freeze
-
-# predicates that may occur multiple times per subject
-MULTI_PREDICATES = [
-  W3_TYPE,
-  W3_ALT_LABEL,
-  W3_PREF_LABEL,
-].freeze
-
-ALL_PREDICATES = (SINGULAR_PREDICATES + MULTI_PREDICATES).freeze
-
-TERM_TYPE_MAPPING = {
-  "http://www.loc.gov/mads/rdf/v1#Topic" => "topic",
-  "http://www.loc.gov/mads/rdf/v1#Geographic" => "geographic",
-  "http://www.loc.gov/mads/rdf/v1#PersonalName" => "name_personal",
-  "http://www.loc.gov/mads/rdf/v1#ComplexSubject" => "complex_subject",
-  "http://www.loc.gov/mads/rdf/v1#CorporateName" => "name_corporate",
-  "http://www.loc.gov/mads/rdf/v1#GenreForm" => "genreform",
-  "http://www.loc.gov/mads/rdf/v1#Temporal" => "temporal",
-  "http://www.loc.gov/mads/rdf/v1#NameTitle" => "name_title",
-  "http://www.loc.gov/mads/rdf/v1#Title" => "title",
-  "http://www.loc.gov/mads/rdf/v1#ConferenceName" => "name_conference",
-}.freeze
-
-VOCABULARIES = {
-  lcgft: {
-    authority_name: "Library of Congress Genre/Form Terms for Library and Archival Materials",
-    term_type: "genreform",
-  },
-  lctgm: {
-    authority_name: "Thesaurus for Graphic Materials",
-    term_type: "concept",
-  },
-  lcsh: {
-    authority_name: "Library of Congress subject headings",
-  },
-  naf: {
-    authority_name: "LC/NACO authority file",
-  },
-  aat: {
-    authority_name: "Art and Architecture Thesaurus",
-    term_type: "concept",
-  },
-}.freeze
-
 class SolrDocGenerator
-  attr_reader :authority_code, :authority_name, :term_type, :verbose
-
   def initialize(authority_code, source, output, verbose = false)
-    unless VOCABULARIES.keys.include?(authority_code)
-      raise ArgumentError, "vocabulary must be one of: #{VOCABULARIES.keys.join(", ")}"
-    end
-
     @authority_code = authority_code
-    @authority_name = VOCABULARIES[authority_code][:authority_name]
-    @term_type = VOCABULARIES[authority_code][:term_type]
     @source = source
     @output = output
     @verbose = verbose
@@ -104,41 +33,30 @@ class SolrDocGenerator
     progress = 0
     generated_docs = 0
     outfile = File.open(@output, "w")
-    subject_data = nil
+    authoritative_record = nil
 
     bar = TTY::ProgressBar.new(PROGRESS_BAR_FORMAT, total: sorted_lines, frequency: PROGRESS_BAR_FREQUENCY) if @verbose
 
     sorted_file.each do |line|
-      matches = line.match(REGEX_RDF_TRIPPLES)
-
-      if ALL_PREDICATES.include?(matches[:predicate])
-        subject = parse_value(matches[:subject])
-
-        if subject_data.nil?
+      triple = RdfTriple.parse(line)
+      if(triple.valid_predicate?)
+        if authoritative_record.nil?
           # first document encountered, happens only once
-          subject_data = { subject: subject }
-        elsif subject_data[:subject] != subject
+          authoritative_record = AuthoritativeRecord.new(@authority_code, triple.subject)
+        elsif authoritative_record.subject != triple.subject
           # new subject, write the current one and start a new one
-          generated_docs += 1 if write_solr_doc(subject_data, outfile)
-          subject_data = { subject: subject }
+          generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO fix
+          authoritative_record = AuthoritativeRecord.new(@authority_code, triple.subject)
         end
 
-        predicate = parse_value(matches[:predicate])
-        object = parse_value(matches[:object])
-
-        if SINGULAR_PREDICATES.include?(predicate)
-          subject_data[predicate] = object
-        else
-          subject_data[predicate] ||= Set.new
-          subject_data[predicate] << object
-        end
+        authoritative_record.add_triple(triple)
       end
 
       progress += 1
       bar.advance(PROGRESS_BAR_UPDATE_DOC_COUNT) if progress % PROGRESS_BAR_UPDATE_DOC_COUNT == 0 if @verbose
     end
 
-    generated_docs += 1 if write_solr_doc(subject_data, outfile)
+    generated_docs += 1 if write_solr_doc(authoritative_record, outfile) # TODO: fix
     outfile.close
 
     if @verbose
@@ -167,18 +85,22 @@ class SolrDocGenerator
     sorted_lines = 0
 
     File.open(@source, "r").each do |line|
-      if matches = line.match(REGEX_RDF_TRIPPLES)
+      begin
+        triple = RdfTriple.parse(line)
+
         if bucket.length >= DOCUMENTS_PER_TEMPFILE
           tempfiles << dump_bucket_to_tmp_file(bucket)
           bucket = []
         end
 
-        if matches[:predicate] == LOC_RECORD_STATUS && matches[:object] == LOC_STATUS_DEPRECATED
-          @deprecated_metadata_nodes << matches[:subject]
+        if triple.deprecated?
+          @deprecated_metadata_nodes << triple.subject
         end
 
-        bucket << [matches[:subject], line]
+        bucket << [triple.subject, line]
         sorted_lines += 1
+      rescue RdfTriple::ParseError
+        # ignore this invalid line
       end
 
       read_lines += 1
@@ -193,7 +115,7 @@ class SolrDocGenerator
       puts "Merging into single file..."
     end
 
-    tempfile_readers = tempfiles.map { |f| Zlib::GzipReader.new(open(f.path)) }
+    tempfile_readers = tempfiles.map { |f| Zlib::GzipReader.new(open(f.path, "r")) }
 
     heads = tempfile_readers.each_with_index.map do |tempfile, i|
       [tempfile.readline, i]
@@ -233,7 +155,7 @@ class SolrDocGenerator
 
     mergefile_writer.close
 
-    mergefile_reader = Zlib::GzipReader.new(open(@mergefile.path))
+    mergefile_reader = Zlib::GzipReader.new(open(@mergefile.path, "r"))
     return mergefile_reader, merge_line_count
   end
 
@@ -269,67 +191,10 @@ class SolrDocGenerator
     tempfile
   end
 
-  def parse_value(value)
-    if match = value.match(REGEX_LITERAL_WITH_LANGUAGE)
-      return match[:language] == "en" ? match[:value] : nil
-    elsif match = value.match(REGEX_IRI)
-      return match[:value]
-    elsif match = value.match(REGEX_LITERAL)
-      return match[:value]
-    else
-      raise "Unable to parse RDF value: #{value}"
-    end
-  end
-
-  def write_solr_doc(subject_data, outfile)
-    return if subject_data[:subject].start_with?("_") # bnode
-    return if subject_data[:authority_code] == "lcsh" && !(subject_data[:subject] =~ REGEX_LOC_URI)
-    return if @deprecated_metadata_nodes.include?(subject_data[LOC_ADMIN_METADATA])
-
-    term = nil
-    if subject_data.include?(LOC_AUTHORITATIVE_LABEL)
-      term = subject_data[LOC_AUTHORITATIVE_LABEL]
-    elsif subject_data.include?(W3_PREF_LABEL)
-      term = subject_data[W3_PREF_LABEL].first
-    elsif subject_data.include?(W3_RDF_LABEL)
-      term = subject_data[W3_RDF_LABEL]
-    end
-    return unless term
-
-    term_type = @term_type
-    if !term_type
-      # this vocabulary does not have a set term type, look it up for this document
-      document_types = subject_data[W3_TYPE]
-      if document_types
-        TERM_TYPE_MAPPING.each do |term_type_iri, value|
-          if document_types.include?(term_type_iri)
-            term_type = value
-            break
-          end
-        end
-      end
-    end
-    return unless term_type
-
-    return if @authority_code == :lcsh && term_type == "complex_subject"
-
-    record_id = File.basename(subject_data[:subject])
-
-    doc = {
-      uri: subject_data[:subject],
-      term: term,
-      term_idx: term,
-      term_type: term_type,
-      record_id: record_id,
-      language: "en",
-      authority_code: @authority_code,
-      authority_name: @authority_name,
-      unique_id: "#{@authority_code}_#{record_id}",
-      alternate_term_idx: subject_data[W3_ALT_LABEL]&.to_a,
-      alternate_term: subject_data[W3_ALT_LABEL]&.to_a,
-    }
-
-    outfile.puts(doc.to_json)
+  def write_solr_doc(authoritative_record, outfile)
+    return unless authoritative_record.valid?
+    return if @deprecated_metadata_nodes.include?(authoritative_record.metadata_node)
+    outfile.puts(authoritative_record.to_json)
     return true
   end
 end
