@@ -6,6 +6,7 @@ class RdfTriple
   REGEX_LITERAL = /^\"?(?<value>.+?)\"?$/
   REGEX_IRI = /^<(?<value>.+)>$/
   REGEX_ESCAPED_UNICODE = /\\u([\da-fA-F]{4})/
+  REGEX_LOC_URI = /^https?:\/\/.*\.loc.gov/
 
   LOC_AUTHORITATIVE_LABEL = "http://www.loc.gov/mads/rdf/v1#authoritativeLabel"
   LOC_ADMIN_METADATA = "http://www.loc.gov/mads/rdf/v1#adminMetadata"

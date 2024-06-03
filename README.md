@@ -5,22 +5,22 @@ search queries a Solr index. The documents in that index need to be updated peri
 
 ## Supported Vocabularies
 
-- [Library of Congress Genre/Form Terms (lcgft)](https://id.loc.gov/authorities/genreForms.html): [source](https://lds-downloads.s3.amazonaws.com/authoritiesgenreForms.nt.madsrdf.zip)
-- [Library of Congress Thesaurus for Graphic Materials (lctgm)](https://id.loc.gov/vocabulary/graphicMaterials.html) - [source](https://lds-downloads.s3.amazonaws.com/vocabularygraphicMaterials.nt.both.zip)
-- [Library of Congress Names (naf)](https://id.loc.gov/authorities/names.html) - [source](https://lds-downloads.s3.amazonaws.com/lcnaf.madsrdf.nt.zip)
-- [Library of Congress Subject Headings (lcsh)](https://id.loc.gov/authorities/subjects.html) - [source](https://lds-downloads.s3.amazonaws.com/lcsh.madsrdf.nt.zip)
-- [Getty AAT (aat)](http://vocab.getty.edu/) - [source](http://vocab.getty.edu/dataset/aat/full.zip)
+- [Library of Congress Genre/Form Terms (lcgft)](https://id.loc.gov/authorities/genreForms.html): [source](https://id.loc.gov/download/authorities/genreForms.madsrdf.nt.gz)
+- [Library of Congress Thesaurus for Graphic Materials (lctgm)](https://id.loc.gov/vocabulary/graphicMaterials.html) - [source](https://id.loc.gov/download/vocabulary/graphicMaterials.madsrdf.nt.gz)
+- [Library of Congress Names (naf)](https://id.loc.gov/authorities/names.html) - [source](https://id.loc.gov/download/authorities/names.madsrdf.nt.gz)
+- [Library of Congress Subject Headings (lcsh)](https://id.loc.gov/authorities/subjects.html) - [source](https://id.loc.gov/download/authorities/subjects.madsrdf.nt.gz)
+- [Getty AAT (aat)](http://vocab.getty.edu/) - [source](http://aatdownloads.getty.edu/VocabData/full.zip)
 
-## Dependencies
+## Building the container
 
-Install gems with `bundle install`
+Build the `webapp` container with `docker-compose build`. Then, enter it with `docker-compose run webapp bash`
 
 ## Tests
 
 Run tests with the `run_tests.rb` script:
 
 ```console
-$ ruby test/run_tests.rb 
+$ bundle exec ruby test/run_tests.rb
 ```
 
 ## Running
@@ -30,7 +30,7 @@ $ ruby test/run_tests.rb
 With dependencies installed, run the `rdf_to_solr_docs.rb` script with required arguments. To see help text, use the `-h` flag:
 
 ```console
-$ ruby rdf_to_solr_docs.rb -h
+$ bundle exec ruby rdf_to_solr_docs.rb -h
 Usage: rdf_to_solr_docs.rb [options]
     -v, --vocabulary [VOCABULARY]    Vocabulary type
     -s, --source [SOURCE]            Path or URL to vocabulary file
@@ -40,15 +40,17 @@ Usage: rdf_to_solr_docs.rb [options]
 For example, to process the Genre & Form Terms vocabulary:
 
 ```console
-$ ruby rdf_to_solr_docs.rb -v lcgft -s data/source/authoritiesgenreForms.madsrdf.nt -o data/output/lcgft.json
+$ bundle exec ruby rdf_to_solr_docs.rb -v lcgft -s data/source/authoritiesgenreForms.madsrdf.nt -o data/output/lcgft.json
 ```
+
+Names and Subjects are the largest dataset, and as of 2024, Subjects was larger than 80 GB. You'll need plenty of local hard drive space to unzip the source file. Formatting the data into json recently took approximately 3 days.
 
 ### Upload Solr docs
 
 Now that you have generated solr docs, upload them to solr using the `post_to_solr.rb` script. To see help text, use the `-h` flag:
 
 ```console
-$ ruby post_to_solr.rb -h
+$ bundle exec ruby post_to_solr.rb -h
 Usage: post_to_solr.rb [options]
     -s, --source [SOURCE]            The JSON file containing documents. (Output from rds_to_solr_docs.rb)
     -d [SOLR_DESTINATION],           URL to Solr
@@ -61,7 +63,7 @@ Usage: post_to_solr.rb [options]
 For example, to upload the Genre & Form Terms generated from the above example to a Solr instance running on localhost:
 
 ```console
-ruby post_to_solr.rb -s data/output/lcgft.json -d http://localhost:8981/solr/authoritydata
+$ bundle exec ruby post_to_solr.rb -s data/output/lcgft.json -d http://localhost:8981/solr/authoritydata
 ```
 
 ### Backup Solr docs
@@ -69,7 +71,7 @@ ruby post_to_solr.rb -s data/output/lcgft.json -d http://localhost:8981/solr/aut
 You can download a backup of existing solr docs using the `pull_from_solr.rb` script. To see help text, use the `-h` flag:
 
 ```console
-$ ruby pull_from_solr.rb -h
+$ bundle exec ruby pull_from_solr.rb -h
 Usage: pull_from_solr.rb [options]
     -d [SOLR_DESTINATION],           URL to Solr
         --solr_destination
@@ -82,5 +84,5 @@ Usage: pull_from_solr.rb [options]
 For example, to back up the NAF vocabulary from QA:
 
 ```console
-ruby pull_from_solr.rb -d http://10.225.133.217:8983/solr/authoritydata
+bundle exec ruby pull_from_solr.rb -d http://10.225.133.217:8983/solr/authoritydata
 ```
