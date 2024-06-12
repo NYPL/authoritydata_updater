@@ -54,6 +54,7 @@ while(current_page == 1 || result["response"]["docs"].size > 0) do
   bar.advance
 
   result["response"]["docs"].each do |doc|
+    doc.delete('_version_')
     outfile.puts(doc.to_json)
   end
 

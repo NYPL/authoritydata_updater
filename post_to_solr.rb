@@ -55,8 +55,13 @@ puts "Posting documents to Solr in #{batches} batches of #{DOCS_PER_BATCH} docum
 
 def post_batch(documents)
   return unless documents.any?
-  SOLR.add(documents)
-  SOLR.commit
+  begin
+    SOLR.add(documents)
+    SOLR.commit
+  rescue StandardError => e
+    puts "Got error: #{e.inspect}"
+    exit 1
+  end
 end
 
 batch = []
