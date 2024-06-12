@@ -11,6 +11,8 @@ require "pry"
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
 PROGRESS_BAR_FREQUENCY = 2
 DOCS_PER_BATCH = 10000
+#DOCS_PER_BATCH = 1
+
 
 options = {}
 
@@ -55,8 +57,13 @@ puts "Posting documents to Solr in #{batches} batches of #{DOCS_PER_BATCH} docum
 
 def post_batch(documents)
   return unless documents.any?
-  SOLR.add(documents)
-  SOLR.commit
+  begin
+    SOLR.add(documents)
+    SOLR.commit
+  rescue StandardError => e
+    puts "Got error: #{e.inspect}"
+    exit 1
+  end
 end
 
 batch = []

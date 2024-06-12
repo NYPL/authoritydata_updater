@@ -73,16 +73,16 @@ You can download a backup of existing solr docs using the `pull_from_solr.rb` sc
 ```console
 $ bundle exec ruby pull_from_solr.rb -h
 Usage: pull_from_solr.rb [options]
-    -d [SOLR_DESTINATION],           URL to Solr
+    -d [SOLR_DESTINATION],                 URL to Solr
         --solr_destination
-    -u, --solr_username [USERNAME]   Solr username (optional)
-    -p, --solr_password [PASSWORD]   Solr password (optional)
-    -a, --append                     Do not delete existing documents for this authority first
-    -o, --output [OUTPUT]            Output file (optional)
+    -u, --solr_username [USERNAME]         Solr username (optional)
+    -p, --solr_password [PASSWORD]         Solr password (optional)
+    -a, --authority_code [AUTHORITY_CODE]  Authority code (optional)
+    -o, --output [OUTPUT]                  Output file
 ```
 
-For example, to back up the NAF vocabulary from QA:
+For example, to back up the LCGFT vocabulary from QA:
 
 ```console
-bundle exec ruby pull_from_solr.rb -d http://10.225.133.217:8983/solr/authoritydata
+bundle exec ruby pull_from_solr.rb -d http://10.225.133.217:8983/solr/authoritydata -a lcgft -o data/output/lcgft.json
 ```
