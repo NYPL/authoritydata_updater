@@ -54,9 +54,8 @@ while(current_page == 1 || result["response"]["docs"].size > 0) do
   bar.advance
 
   result["response"]["docs"].each do |doc|
-    json_string = doc.to_json
-    modified_json_string = json_string.gsub(/,"_version_":[0-9]+/, '')
-    outfile.puts(modified_json_string)
+    doc.delete('_version_')
+    outfile.puts(doc.to_json)
   end
 
   current_page += 1
