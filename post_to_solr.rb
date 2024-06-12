@@ -11,8 +11,6 @@ require "pry"
 PROGRESS_BAR_FORMAT = "[:bar] [:current/:total] [:percent] [ET::elapsed] [ETA::eta] [:rate/s]"
 PROGRESS_BAR_FREQUENCY = 2
 DOCS_PER_BATCH = 10000
-#DOCS_PER_BATCH = 1
-
 
 options = {}
 
