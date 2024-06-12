@@ -1,41 +1,30 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    builder (3.2.4)
+    builder (3.3.0)
     coderay (1.1.3)
-    faraday (1.7.1)
-      faraday-em_http (~> 1.0)
-      faraday-em_synchrony (~> 1.0)
-      faraday-excon (~> 1.1)
-      faraday-httpclient (~> 1.0.1)
-      faraday-net_http (~> 1.0)
-      faraday-net_http_persistent (~> 1.1)
-      faraday-patron (~> 1.0)
-      faraday-rack (~> 1.0)
-      multipart-post (>= 1.2, < 3)
-      ruby2_keywords (>= 0.0.4)
-    faraday-em_http (1.0.0)
-    faraday-em_synchrony (1.0.0)
-    faraday-excon (1.1.0)
-    faraday-httpclient (1.0.1)
-    faraday-net_http (1.0.1)
-    faraday-net_http_persistent (1.2.0)
-    faraday-patron (1.0.0)
-    faraday-rack (1.0.0)
-    method_source (1.0.0)
-    multipart-post (2.1.1)
+    connection_pool (2.4.1)
+    faraday (2.9.1)
+      faraday-net_http (>= 2.0, < 3.2)
+    faraday-net_http (3.1.0)
+      net-http
+    method_source (1.1.0)
+    net-http (0.4.1)
+      uri
     pastel (0.8.0)
       tty-color (~> 0.5)
-    pry (0.14.1)
+    pry (0.14.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
-    redis (4.4.0)
-    rsolr (2.3.0)
+    redis (5.2.0)
+      redis-client (>= 0.22.0)
+    redis-client (0.22.2)
+      connection_pool
+    rsolr (2.6.0)
       builder (>= 2.1.2)
-      faraday (>= 0.9.0)
-    ruby-prof (1.4.3)
-    ruby2_keywords (0.0.5)
-    rufo (0.13.0)
+      faraday (>= 0.9, < 3, != 2.0.0)
+    ruby-prof (1.7.0)
+    rufo (0.18.0)
     strings-ansi (0.2.0)
     tty-color (0.6.0)
     tty-command (0.10.1)
@@ -46,13 +35,15 @@ GEM
       tty-cursor (~> 0.7)
       tty-screen (~> 0.8)
       unicode-display_width (>= 1.6, < 3.0)
-    tty-screen (0.8.1)
+    tty-screen (0.8.2)
     tty-spinner (0.9.3)
       tty-cursor (~> 0.7)
-    unicode-display_width (2.0.0)
+    unicode-display_width (2.5.0)
+    uri (0.13.0)
 
 PLATFORMS
   ruby
+  x86_64-linux
 
 DEPENDENCIES
   pry
@@ -65,7 +56,7 @@ DEPENDENCIES
   tty-spinner
 
 RUBY VERSION
-   ruby 2.7.8p225
+   ruby 3.3.2p78
 
 BUNDLED WITH
-   2.1.4
+   2.5.9
