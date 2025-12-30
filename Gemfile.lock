@@ -39,7 +39,7 @@ GEM
     tty-spinner (0.9.3)
       tty-cursor (~> 0.7)
     unicode-display_width (2.5.0)
-    uri (0.13.0)
+    uri (0.13.3)
 
 PLATFORMS
   ruby
